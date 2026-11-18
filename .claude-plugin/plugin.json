@@ -1,6 +1,6 @@
 {
   "name": "side-dock-claude",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "crab-cam, lot-map and savvy-progress 1.2 in one right-side pane (Session panel on top, work map below) and one row above the prompt",
   "license": "MIT",
   "types": "./types/index.d.ts",
@@ -80,7 +80,7 @@
       "type": "boolean",
       "title": "What each call adds to the context（每次调用对上下文的增量）",
       "default": false,
-      "description": "Show roughly how many tokens each call added to the context (estimate).\n显示每次调用让上下文增长的大致令牌数（估算值）。"
+      "description": "Show roughly how many tokens each call added to the context (estimate).\n显示每次调用让上下文增长的大致token数（估算值）。"
     },
     "theme": {
       "type": "string",
@@ -213,38 +213,38 @@
         "CNY"
       ],
       "default": "USD",
-      "description": "Currency of the costs shown, $ (USD) or ¥ (CNY). Prices below use it per million tokens. Default prices: Anthropic list, CNY at 7 ¥ per $.\n面板费用的币种：$（USD）或 ¥（CNY）。下面的价格按它每百万令牌计。默认价为 Anthropic 官方标价，CNY 按 1 美元 = 7 元。"
+      "description": "Currency of the costs shown, $ (USD) or ¥ (CNY). Prices below use it per million tokens. Default prices: Anthropic list, CNY at 7 ¥ per $.\n面板费用的币种：$（USD）或 ¥（CNY）。下面的价格按它每百万token计。默认价为 Anthropic 官方标价，CNY 按 1 美元 = 7 元。"
     },
     "priceFable": {
       "type": "string",
       "title": "Fable price（Fable 价格）",
       "default": "",
-      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Fable prices; empty uses the list price.\n每百万令牌：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示令牌数>价格。填写则替换 Fable 全部默认价，留空用官方价。"
+      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Fable prices; empty uses the list price.\n每百万token：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示token数>价格。填写则替换 Fable 全部默认价，留空用官方价。"
     },
     "priceOpus": {
       "type": "string",
       "title": "Opus price（Opus 价格）",
       "default": "",
-      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Opus prices; empty uses the list price.\n每百万令牌：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示令牌数>价格。填写则替换 Opus 全部默认价，留空用官方价。"
+      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Opus prices; empty uses the list price.\n每百万token：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示token数>价格。填写则替换 Opus 全部默认价，留空用官方价。"
     },
     "priceSonnet": {
       "type": "string",
       "title": "Sonnet price（Sonnet 价格）",
       "default": "",
-      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Sonnet prices; empty uses the list price.\n每百万令牌：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示令牌数>价格。填写则替换 Sonnet 全部默认价，留空用官方价。"
+      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Sonnet prices; empty uses the list price.\n每百万token：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示token数>价格。填写则替换 Sonnet 全部默认价，留空用官方价。"
     },
     "priceHaiku": {
       "type": "string",
       "title": "Haiku price（Haiku 价格）",
       "default": "",
-      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Haiku prices; empty uses the list price.\n每百万令牌：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示令牌数>价格。填写则替换 Haiku 全部默认价，留空用官方价。"
+      "description": "Per million tokens: input/output/cacheRead/cacheWrite, e.g. 4/20/0.2/5 (two numbers: cache read 0.1×, write 1.25× input). Longer-prompt tier: add , promptTokens>prices. Filled replaces all default Haiku prices; empty uses the list price.\n每百万token：输入/输出/缓存读/缓存写，如 4/20/0.2/5（只写两个数时缓存读按 0.1 倍、缓存写按 1.25 倍输入价）。长提示分档：逗号后加 提示token数>价格。填写则替换 Haiku 全部默认价，留空用官方价。"
     },
     "modelPrices": {
       "type": "string",
       "multiple": true,
-      "title": "Token prices by exact model name（按模型名的令牌价格，进阶）",
+      "title": "Token prices by exact model name（按模型名的token价格，进阶）",
       "default": [],
-      "description": "Advanced: price one exact model, written model=input/output[/cacheRead/cacheWrite], e.g. opus-5-5=4/20/0.2/5. Longest name match wins. Tier: model>promptTokens=prices.\n进阶：按精确模型名定价，每条写成 模型=输入/输出[/缓存读/缓存写]，如 opus-5-5=4/20/0.2/5。取最长名称匹配。分档：模型>提示令牌数=价格。"
+      "description": "Advanced: price one exact model, written model=input/output[/cacheRead/cacheWrite], e.g. opus-5-5=4/20/0.2/5. Longest name match wins. Tier: model>promptTokens=prices.\n进阶：按精确模型名定价，每条写成 模型=输入/输出[/缓存读/缓存写]，如 opus-5-5=4/20/0.2/5。取最长名称匹配。分档：模型>提示token数=价格。"
     }
   },
   "homepage": "https://github.com/LeonardoRain/side-dock-claude",
