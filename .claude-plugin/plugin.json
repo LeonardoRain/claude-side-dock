@@ -10,12 +10,6 @@
       "title": "Work map language（工作地图语言）",
       "options": [
         "en",
-        "ru",
-        "es",
-        "fr",
-        "de",
-        "it",
-        "pt",
         "zh"
       ],
       "default": "en",
@@ -167,13 +161,12 @@
     "agentsLanguage": {
       "type": "string",
       "title": "Session panel language（会话面板语言）",
-      "description": "auto follows Claude Code's language setting, then the system locale; en, ru or tr. 面板始终以英文显示为默认。auto 跟随系统语言。",
+      "description": "auto follows Claude Code's language setting, then the system locale; en or zh. 默认英文；auto 跟随 Claude Code 语言设置，再跟随系统语言；zh 为简体中文。",
       "default": "en",
       "options": [
         "auto",
         "en",
-        "ru",
-        "tr"
+        "zh"
       ]
     },
     "autoOpen": {

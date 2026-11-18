@@ -45,9 +45,9 @@ type ProgressInput = {
 
 // ---------------------------------------------------------------------------
 // Language: the `language` option, else Claude Code's `language` setting, else the
-// process locale; English when nothing says Russian or Turkish.
+// process locale; English when nothing says Chinese.
 
-type Lang = 'en' | 'ru' | 'tr'
+type Lang = 'en' | 'zh'
 
 const STRINGS = {
   en: {
@@ -122,149 +122,77 @@ const STRINGS = {
     wholeSession: 'Whole session',
     workflow: 'Workflow',
   },
-  ru: {
-    pane: 'Сессия',
-    details: 'Подробнее',
-    context: 'Контекст',
-    sessionCost: 'Стоимость сессии',
-    estimated: 'оценка',
-    elapsed: 'Прошло',
-    active: 'Активно',
-    limits: 'Лимиты',
-    fiveHour: '5-часовое окно',
-    fiveShort: '5ч',
-    sevenDay: '7-дневное окно',
-    sevenShort: '7д',
-    spend: 'Лимит расходов',
-    spendShort: 'лимит',
-    ctxWindow: 'Контекстное окно',
-    noReading: 'Пока нет данных',
-    tokenSplit: 'Токены',
-    input: 'Ввод',
-    output: 'Вывод',
-    cacheRead: 'Чтение кэша',
-    cacheWrite: 'Запись кэша',
-    cacheHit: 'Попадание в кэш',
-    requests: 'запросов к модели',
-    byModel: 'По моделям',
-    emptyHint: 'Субагент появится здесь с моделью, контекстом и стоимостью, как только начнёт работу.',
-    d: 'д',
-    h: 'ч',
-    min: 'мин',
-    lessMin: '<1 мин',
-    cost: 'Стоимость',
-    tokens: 'Токены',
-    time: 'Время',
-    collapse: 'Свернуть',
-    expand: 'Развернуть',
-    running: 'Работают',
-    finished: 'Завершены',
-    planned: 'Запланированы',
-    empty: 'Субагентов пока нет.',
-    round: 'раунд',
-    failed: 'ошибка',
-    after: 'после',
-    tokensWord: 'токенов',
-    agentOne: 'агент',
-    agentFew: 'агента',
-    agentsCount: 'агентов',
-    isRunning: 'работает',
-    isFinished: 'завершён',
-    isPlanned: 'запланирована',
-    opened: 'Панель агентов открыта.',
-    closed: 'Панель агентов закрыта.',
-    done: 'Готово',
-    plan: 'План',
-    design: 'Дизайн',
-    tasks: 'Задачи',
-    review: 'Ревью',
-    busy: 'в работе',
-    mainSession: 'Основная сессия',
-    subagents: 'Субагенты',
-    estimate: '≈ оценка по ценам API из числа токенов; не счёт',
-    hideDone: 'Скрыть завершённые',
-    showDone: 'Показать завершённые',
-    auto: 'авто',
-    routedAlt: 'модель выбрана маршрутизацией',
-    routingHead: 'Модель субагентов, когда вызов Agent не называет модель:',
-    routingUsage: 'Использование: /agent-routing on | off | explore <модель> | general <модель>, модель: inherit, haiku, sonnet, opus, fable. inherit: модель основной сессии; opus: Opus при любой модели основной сессии.',
-    routingSet: 'Сохранено; новые субагенты используют это:',
-    routingDenied: 'Не сохранено',
-    inView: 'В фокусе',
-    wholeSession: 'Вся сессия',
-    workflow: 'Воркфлоу',
-  },
-  tr: {
-    pane: 'Oturum',
-    details: 'Ayrıntılar',
-    context: 'Bağlam',
-    sessionCost: 'Oturum maliyeti',
-    estimated: 'tahmini',
-    elapsed: 'Süre',
-    active: 'Aktif',
-    limits: 'Kullanım limitleri',
-    fiveHour: '5 saatlik pencere',
-    fiveShort: '5 sa',
-    sevenDay: '7 günlük pencere',
-    sevenShort: '7 gün',
-    spend: 'Harcama limiti',
-    spendShort: 'limit',
-    ctxWindow: 'Bağlam penceresi',
-    noReading: 'Henüz ölçüm yok',
-    tokenSplit: 'Token dağılımı',
-    input: 'Girdi',
-    output: 'Çıktı',
-    cacheRead: 'Önbellek okuma',
-    cacheWrite: 'Önbellek yazma',
-    cacheHit: 'Önbellek isabeti',
-    requests: 'model isteği',
-    byModel: 'Modellere göre',
-    emptyHint: 'Bir alt ajan başladığında modeli, bağlamı ve maliyetiyle burada görünür.',
-    d: 'gün',
-    h: 'sa',
-    min: 'dk',
-    lessMin: '<1 dk',
-    cost: 'Maliyet',
-    tokens: 'Token',
-    time: 'Süre',
-    collapse: 'Daralt',
-    expand: 'Genişlet',
-    running: 'Çalışıyor',
-    finished: 'Bitti',
-    planned: 'Planlandı',
-    empty: 'Henüz alt ajan yok.',
-    round: 'tur',
-    failed: 'hata',
-    after: 'sonra',
-    tokensWord: 'token',
-    agentOne: 'ajan',
-    agentFew: 'ajan',
-    agentsCount: 'ajan',
-    isRunning: 'çalışıyor',
-    isFinished: 'bitti',
-    isPlanned: 'planlandı',
-    opened: 'Ajan paneli açıldı.',
-    closed: 'Ajan paneli kapandı.',
-    done: 'Bitti',
-    plan: 'Plan',
-    design: 'Tasarım',
-    tasks: 'Görevler',
-    review: 'İnceleme',
-    busy: 'çalışıyor',
-    mainSession: 'Ana oturum',
-    subagents: 'Alt ajanlar',
-    estimate: '≈ token sayısından API fiyatıyla tahmin; fatura değil',
-    hideDone: 'Bitenleri gizle',
-    showDone: 'Bitenleri göster',
-    auto: 'otomatik',
-    routedAlt: 'model yönlendirmeyle seçildi',
-    routingHead: 'Alt ajan model yönlendirmesi, model belirtmeyen Agent çağrıları için:',
-    routingUsage: 'Kullanım: /agent-routing on | off | explore <model> | general <model>; model: inherit, haiku, sonnet, opus, fable. inherit: ana oturumun modeli; opus: ana oturum hangi modelde olursa olsun Opus.',
-    routingSet: 'Kaydedildi; yeni alt ajanlar bunu kullanır:',
-    routingDenied: 'Kaydedilmedi',
-    inView: 'Görüntülenen',
-    wholeSession: 'Tüm oturum',
-    workflow: 'İş akışı',
+  zh: {
+    pane: '会话',
+    details: '详情',
+    context: '上下文',
+    sessionCost: '会话成本',
+    estimated: '估算',
+    elapsed: '已用时',
+    active: '活跃',
+    limits: '用量限额',
+    fiveHour: '5 小时窗口',
+    fiveShort: '5h',
+    sevenDay: '7 天窗口',
+    sevenShort: '7d',
+    spend: '花费上限',
+    spendShort: '上限',
+    ctxWindow: '上下文窗口',
+    noReading: '暂无读数',
+    tokenSplit: '令牌',
+    input: '输入',
+    output: '输出',
+    cacheRead: '缓存读取',
+    cacheWrite: '缓存写入',
+    cacheHit: '缓存命中',
+    requests: '次模型请求',
+    byModel: '按模型',
+    emptyHint: '子代理启动后，会在这里显示它的模型、上下文和成本。',
+    d: '天',
+    h: '时',
+    min: '分',
+    lessMin: '<1 分',
+    cost: '成本',
+    tokens: '令牌',
+    time: '时间',
+    collapse: '折叠',
+    expand: '展开',
+    running: '运行中',
+    finished: '已完成',
+    planned: '已计划',
+    empty: '暂无子代理。',
+    round: '轮',
+    failed: '出错',
+    after: '在其后',
+    tokensWord: '令牌',
+    agentOne: '个代理',
+    agentFew: '个代理',
+    agentsCount: '个代理',
+    isRunning: '运行中',
+    isFinished: '已完成',
+    isPlanned: '已计划',
+    opened: '代理面板已打开。',
+    closed: '代理面板已关闭。',
+    done: '完成',
+    plan: '计划',
+    design: '设计',
+    tasks: '任务',
+    review: '审查',
+    busy: '运行中',
+    mainSession: '主会话',
+    subagents: '子代理',
+    estimate: '≈ 按令牌数和价目表折算的人民币估算值，不是账单',
+    hideDone: '隐藏已完成',
+    showDone: '显示已完成',
+    auto: '自动',
+    routedAlt: '模型由路由选定',
+    routingHead: '子代理模型路由（针对未指定模型的 Agent 调用）：',
+    routingUsage: '用法：/agent-routing on | off | explore <模型> | general <模型>，模型可选 inherit、haiku、sonnet、opus、fable。inherit：沿用主会话模型；opus：无论主会话用什么都用 Opus。',
+    routingSet: '已保存；新的子代理将使用：',
+    routingDenied: '未保存',
+    inView: '当前视图',
+    wholeSession: '整个会话',
+    workflow: '工作流',
   },
 } as const
 
@@ -272,20 +200,17 @@ const STRINGS = {
 let lang: Lang = 'en'
 const tr = () => STRINGS[lang]
 
-// "1 agent", "2 agents"; Russian has three forms (1 агент, 3 агента, 5 агентов).
+// "1 agent", "2 agents"; Chinese has one form.
 const agentWord = (n: number): string => {
   const s = tr()
-  const one = n % 10 === 1 && n % 100 !== 11
-  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)
-  if (lang === 'ru') return one ? s.agentOne : few ? s.agentFew : s.agentsCount
-  return n === 1 ? s.agentOne : s.agentsCount
+  return lang === 'zh' || n !== 1 ? s.agentsCount : s.agentOne
 }
 
 const langOf = (v: unknown): Lang =>
-  typeof v !== 'string' ? 'en' : /^(ru|russian|рус)/i.test(v.trim()) ? 'ru' : /^(tr|turkish|türk)/i.test(v.trim()) ? 'tr' : 'en'
+  typeof v !== 'string' ? 'en' : /^(zh|chinese|中文|简体|繁体)/i.test(v.trim()) ? 'zh' : 'en'
 
 async function detectLang($: EngineInterface, option: unknown): Promise<Lang> {
-  if (option === 'en' || option === 'ru' || option === 'tr') return option
+  if (option === 'en' || option === 'zh') return option
   try {
     const settings = (await $.settings.read()) as Record<string, unknown>
     if (typeof settings.language === 'string' && settings.language.trim()) return langOf(settings.language)
@@ -596,11 +521,11 @@ const fmtTime = (ms: number): string => {
   return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`
 }
 
-const fmtPct = (n: number): string => (lang === 'tr' ? `%${Math.round(n)}` : `${Math.round(n)}%`)
+const fmtPct = (n: number): string => `${Math.round(n)}%`
 
 // A share that is neither none nor all never rounds to 0 or 100.
 const fmtShare = (n: number): string =>
-  n > 0 && n < 1 ? (lang === 'tr' ? '<%1' : '<1%') : n < 100 && n > 99 ? (lang === 'tr' ? '>%99' : '>99%') : fmtPct(n)
+  n > 0 && n < 1 ? '<1%' : n < 100 && n > 99 ? '>99%' : fmtPct(n)
 
 // A coarse span for the band and reset times: "2 d 21 h", "1 h 12 min", "12 min", "<1 min".
 const fmtSpan = (ms: number): string => {
@@ -613,7 +538,7 @@ const fmtSpan = (ms: number): string => {
 }
 
 const resetsIn = (span: string): string =>
-  lang === 'tr' ? `${span} sonra sıfırlanır` : lang === 'ru' ? `сброс через ${span}` : `resets in ${span}`
+  lang === 'zh' ? `${span}后重置` : `resets in ${span}`
 
 // Gauges turn amber, then red, as a window fills; the figure is always printed beside them.
 const levelColor = (pct: number): string => (pct >= 90 ? ALERT : pct >= 70 ? WARN : ACCENT)
@@ -627,20 +552,20 @@ const rateLabel = (kind: string, isShort: boolean): string => {
 }
 
 // /context's category names, in the panel's language where it is not English.
-const CATEGORY_TR: Record<string, string> = {
-  'system prompt': 'Sistem istemi',
-  'system tools': 'Sistem araçları',
-  'mcp tools': 'MCP araçları',
-  'custom agents': 'Özel ajanlar',
-  'memory files': 'Bellek dosyaları',
-  skills: 'Beceriler',
-  'slash commands': 'Komutlar',
-  messages: 'Mesajlar',
-  'free space': 'Boş alan',
-  'autocompact buffer': 'Otomatik sıkıştırma payı',
+const CATEGORY_ZH: Record<string, string> = {
+  'system prompt': '系统提示词',
+  'system tools': '系统工具',
+  'mcp tools': 'MCP 工具',
+  'custom agents': '自定义代理',
+  'memory files': '记忆文件',
+  skills: '技能',
+  'slash commands': '斜杠命令',
+  messages: '消息',
+  'free space': '空闲空间',
+  'autocompact buffer': '自动压缩缓冲',
 }
 
-const categoryName = (name: string): string => (lang === 'tr' ? (CATEGORY_TR[name.trim().toLowerCase()] ?? name) : name)
+const categoryName = (name: string): string => (lang === 'zh' ? (CATEGORY_ZH[name.trim().toLowerCase()] ?? name) : name)
 
 const ZERO: TokenSplit = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 
