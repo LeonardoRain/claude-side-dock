@@ -18,6 +18,7 @@ import {
 import { NO_CREW, amend, bandOf, finish, isWorking as isCrewWorking, join, leave, sampleCrew, step, workflowNameOf } from './crew'
 import { meterAlt, meterLines, meterRow, meterSvg, meterWidth } from './meter'
 import { dockClose, dockIsOpen, dockOpen } from '../dock'
+import { getLang } from '../lang'
 import { PANE, crabRow, crewTree, groupKey, stepsKey } from './pane'
 import { BAND_CREW, CRAB_WIDTH, CREW_GLYPH, PROP_WIDTH, SCENE_HEIGHT, crabSvg, crewSvg, propSvg, resumed, sceneRows } from './scenes'
 
@@ -86,14 +87,14 @@ const crewView = atom({ plugin: 'side-dock-claude', key: 'crewView' } as const, 
 
 // The band's button that opens the pane while a crew works and it is closed.
 const WATCH = 'watch-crew'
-const WATCH_LABEL = 'Watch crew ↗'
+const WATCH_LABELS = { en: 'Watch crew ↗', zh: '查看子代理 ↗' } as const
 
 // What the band draws of the crew: its crabs while one is at work, whether to
 // offer the pane, the time the band's drawings are drawn at, and when its
 // scene was first drawn.
 type Watch = { band: CrewBand | undefined; isOffered: boolean; now: number; since: number }
 
-const LABELS: Record<Activity, string> = {
+const LABELS_EN: Record<Activity, string> = {
   idle: 'Claude is resting',
   thinking: 'Claude is thinking',
   reading: 'Claude is reading',
@@ -121,6 +122,37 @@ const LABELS: Record<Activity, string> = {
   memory: 'Claude is remembering something',
   sharing: 'Claude is sharing something with you',
 }
+
+const LABELS_ZH: Record<Activity, string> = {
+  idle: 'Claude 正在休息',
+  thinking: 'Claude 正在思考',
+  reading: 'Claude 正在阅读',
+  coding: 'Claude 正在写代码',
+  writing: 'Claude 正在写文字',
+  designing: 'Claude 正在设计',
+  terminal: 'Claude 正在运行命令',
+  searching: 'Claude 正在搜索',
+  web: 'Claude 正在浏览网页',
+  briefing: 'Claude 正在给子代理布置任务',
+  delegating: 'Claude 正在指挥子代理',
+  talking: 'Claude 正在撰写回复',
+  asking: 'Claude 有问题要问你',
+  planning: 'Claude 正在制定计划',
+  tool: 'Claude 正在使用工具',
+  done: '完成！',
+  permission: 'Claude 正在等你授权',
+  compacting: 'Claude 正在整理记忆',
+  error: '糟糕，出错了',
+  waiting: 'Claude 正在等后台任务',
+  testing: 'Claude 正在跑测试',
+  git: 'Claude 正在操作 git',
+  installing: 'Claude 正在安装依赖',
+  skill: 'Claude 正在加载技能',
+  memory: 'Claude 正在记点东西',
+  sharing: 'Claude 正在向你分享内容',
+}
+
+const labelOf = (activity: Activity): string => (getLang() === 'zh' ? LABELS_ZH : LABELS_EN)[activity]
 
 // A command comes with a description of what it does in plain words, the one
 // the app shows too: that goes before the command itself.
@@ -803,7 +835,7 @@ function terminalTree(
       <Box flexDirection="column" flexGrow={1}>
         {detail.length <= ONE_LINE && <Text> </Text>}
         <Text bold wrap="truncate-end">
-          {LABELS[activity]}
+          {labelOf(activity)}
         </Text>
         {detailLine(table, detail)}
       </Box>
@@ -813,7 +845,7 @@ function terminalTree(
           {gauged !== undefined && <Text color="claude">{meterRow(gauged)}</Text>}
           {watch.isOffered && (
             <Button key={WATCH} onPress={() => undefined}>
-              {WATCH_LABEL}
+              {WATCH_LABELS[getLang()]}
             </Button>
           )}
         </Box>
@@ -833,7 +865,7 @@ function desktopTree(
   const { Box, Button, Svg, Text } = table
   const row = watch.band === undefined ? undefined : crewSvg(watch.band)
   const { activity, detail } = shown
-  const label = LABELS[activity]
+  const label = labelOf(activity)
 
   // The desktop draws the band's drawings afresh whenever the pane redraws,
   // every second while a crew works: they are drawn as far in as they have
@@ -863,7 +895,7 @@ function desktopTree(
           />
           {watch.isOffered && (
             <Button key={WATCH} onPress={() => undefined}>
-              {WATCH_LABEL}
+              {WATCH_LABELS[getLang()]}
             </Button>
           )}
         </Box>

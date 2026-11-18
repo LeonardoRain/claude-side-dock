@@ -3,6 +3,7 @@ import type { EngineInterface, HookFor, Register } from 'claude-code'
 
 import { init as crabInit, crab_agent_spawn, crab_classic_PermissionRequest, crab_classic_Stop, crab_classic_SubagentStart, crab_command_run_COMMAND, crab_session_compact, crab_session_end, crab_session_measure, crab_session_start, crab_tool_call, crab_turn_complete, crab_turn_start, crab_turn_step, crab_ui_press_side_dock_claude, crab_ui_render_AbovePrompt, crab_ui_render_Pane_PANE } from './crab/register'
 import type { DockSections } from '../types'
+import { deck_agent_spawn, deck_classic_Stop, deck_classic_SubagentStop, deck_classic_TaskCompleted, deck_classic_TaskCreated, deck_prompt_submit, deck_session_end, deck_session_start, deck_tool_call, deck_tool_check, deck_turn_complete, deck_turn_start } from './deck/register'
 import { DOCK, dockClose, setDockTitle } from './dock'
 import { init as lotInit, lot_agent_spawn, lot_classic_PreToolUse, lot_classic_SessionStart, lot_classic_UserPromptSubmit, lot_command_run_lot_map, lot_prompt_submit, lot_session_compact, lot_session_start, lot_skill_prompt, lot_tool_call, lot_turn_complete, lot_turn_start, lot_turn_step, lot_ui_render_Pane_PANE } from './lot/register'
 import { init as savvyInit, savvy_agent_spawn, savvy_command_run_agent_routing, savvy_command_run_agents_info, savvy_prompt_submit, savvy_session_measure, savvy_session_start, savvy_tool_call_Agent, savvy_tool_call_STEP_TOOL, savvy_tool_call_TOOL, savvy_turn_complete, savvy_turn_start, savvy_turn_step, savvy_ui_close, savvy_ui_render_AbovePrompt, savvy_ui_render_Pane_PANE } from './savvy/register'
@@ -78,27 +79,31 @@ export const register: Register = (on, options) => {
   savvyInit(options)
 
   // `then(fn)` hands a part the hook beneath it as its `next`.
-  on('session.start', ($, e, next) => crab_session_start($, e, then((e1: Any) => lot_session_start($, e1, then((e2: Any) => savvy_session_start($, e2, next))))))
+  on('session.start', ($, e, next) => crab_session_start($, e, then((e1: Any) => lot_session_start($, e1, then((e2: Any) => savvy_session_start($, e2, then((e3: Any) => deck_session_start($, e3, next))))))))
   on('session.compact', ($, e, next) => crab_session_compact($, e, then((e1: Any) => lot_session_compact($, e1, next))))
-  on('session.end', ($, e, next) => crab_session_end($, e, next))
+  on('session.end', ($, e, next) => crab_session_end($, e, then((e1: Any) => deck_session_end($, e1, next))))
   on('turn.step', async function* ($, e, next) {
     return yield* crab_turn_step($, e, then((e1: Any) => lot_turn_step($, e1, then((e2: Any) => savvy_turn_step($, e2, next)))))
   })
-  on('turn.complete', ($, e, next) => crab_turn_complete($, e, then((e1: Any) => lot_turn_complete($, e1, then((e2: Any) => savvy_turn_complete($, e2, next))))))
-  on('tool.call', ($, e, next) => crab_tool_call($, e, then((e1: Any) => lot_tool_call($, e1, then((e2: Any) => savvyToolCall($, e2, next))))))
-  on('agent.spawn', ($, e, next) => crab_agent_spawn($, e, then((e1: Any) => lot_agent_spawn($, e1, then((e2: Any) => savvy_agent_spawn($, e2, next))))))
-  on('prompt.submit', ($, e, next) => lot_prompt_submit($, e, then((e1: Any) => savvy_prompt_submit($, e1, next))))
+  on('turn.complete', ($, e, next) => crab_turn_complete($, e, then((e1: Any) => lot_turn_complete($, e1, then((e2: Any) => savvy_turn_complete($, e2, then((e3: Any) => deck_turn_complete($, e3, next))))))))
+  on('tool.call', ($, e, next) => crab_tool_call($, e, then((e1: Any) => lot_tool_call($, e1, then((e2: Any) => savvyToolCall($, e2, then((e3: Any) => deck_tool_call($, e3, next))))))))
+  on('agent.spawn', ($, e, next) => crab_agent_spawn($, e, then((e1: Any) => lot_agent_spawn($, e1, then((e2: Any) => savvy_agent_spawn($, e2, then((e3: Any) => deck_agent_spawn($, e3, next))))))))
+  on('prompt.submit', ($, e, next) => lot_prompt_submit($, e, then((e1: Any) => savvy_prompt_submit($, e1, then((e2: Any) => deck_prompt_submit($, e2, next))))))
   on('skill.prompt', ($, e, next) => renameTools($, e, then((e1: Any) => lot_skill_prompt($, e1, next))))
   on('command.run', { command: 'crab-cam' }, ($, e) => crab_command_run_COMMAND($, e as never))
   on('command.run', { command: 'lot-map' }, $ => lot_command_run_lot_map($))
   on('session.measure', ($, e, next) => crab_session_measure($, e, then((e1: Any) => savvy_session_measure($, e1, next))))
-  on('turn.start', ($, e, next) => crab_turn_start($, e, then((e1: Any) => lot_turn_start($, e1, then((e2: Any) => savvy_turn_start($, e2, next))))))
+  on('turn.start', ($, e, next) => crab_turn_start($, e, then((e1: Any) => lot_turn_start($, e1, then((e2: Any) => savvy_turn_start($, e2, then((e3: Any) => deck_turn_start($, e3, next))))))))
   on('ui.close', ($, e, next) => savvy_ui_close($, e, next))
   on('command.run', { command: 'agents-info' }, ($, e, next) => savvy_command_run_agents_info($, e, next))
   on('command.run', { command: 'agent-routing' }, ($, e, next) => savvy_command_run_agent_routing($, e, next))
   on('classic.PermissionRequest', ($, e, next) => crab_classic_PermissionRequest($, e, next))
   on('classic.SubagentStart', ($, e, next) => crab_classic_SubagentStart($, e, next))
-  on('classic.Stop', ($, e, next) => crab_classic_Stop($, e, next))
+  on('classic.Stop', ($, e, next) => crab_classic_Stop($, e, then((e1: Any) => deck_classic_Stop($, e1, next))))
+  on('classic.SubagentStop', ($, e, next) => deck_classic_SubagentStop($, e, next))
+  on('classic.TaskCreated', ($, e, next) => deck_classic_TaskCreated($, e, next))
+  on('classic.TaskCompleted', ($, e, next) => deck_classic_TaskCompleted($, e, next))
+  on('tool.check', ($, e, next) => deck_tool_check($, e, next))
   on('classic.PreToolUse', ($, e, next) => lot_classic_PreToolUse($, e, next))
   on('classic.UserPromptSubmit', ($, e, next) => lot_classic_UserPromptSubmit($, e, next))
   on('classic.SessionStart', ($, e, next) => lot_classic_SessionStart($, e, next))

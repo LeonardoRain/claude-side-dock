@@ -85,3 +85,62 @@ test('the terminal draws the dock too', async ($, on) => {
   expect((await ui.find({ type: 'Text', text: /^Work map$/ }))?.text).toBe('Work map')
   await ui.unmount()
 })
+
+const BAND = {
+  plugin: 'side-dock-claude',
+  component: 'AbovePrompt',
+  surface: 'desktop',
+  props: { hasSurvey: false, isWorking: false, bodyColumns: 100 },
+} as never
+
+test('a todo list draws the Pixel plan bar above the prompt, with no savvy flow', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.tool.call({
+    tool: 'TodoWrite',
+    todos: [
+      { content: 'Read routes', activeForm: 'Reading routes', status: 'in_progress' },
+      { content: 'Fix the bug', activeForm: 'Fixing the bug', status: 'pending' },
+    ],
+  } as never)
+
+  const band = await $.ui.mount(BAND)
+  const svgs = await band.findAll({ type: 'Svg' })
+  expect(svgs.some(s => String((s as { props?: { source?: string } }).props?.source).includes('pxd'))).toBe(true)
+  await band.unmount()
+})
+
+test('a spawned subagent shows as a strip under the bar', async ($, on) => {
+  engine(on)
+  on('agent.spawn', () => ({ model: 'claude-haiku-5-5', agentId: 'a1' }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.agent.spawn({ tool_use_id: 't1', prompt: 'look', description: 'Map the routes', subagentType: 'Explore' } as never)
+
+  const band = await $.ui.mount(BAND)
+  const svgs = await band.findAll({ type: 'Svg' })
+  expect(svgs.some(s => String((s as { props?: { source?: string } }).props?.source).includes('Map the routes'))).toBe(true)
+  await band.unmount()
+})
+
+const pixelSources = async (band: { findAll: (q: { type: string }) => Promise<unknown[]> }): Promise<string[]> =>
+  (await band.findAll({ type: 'Svg' })).map(s => String((s as { props?: { source?: string } }).props?.source))
+
+test('a finished bar stays up until the next message', async ($, on) => {
+  engine(on)
+  on('prompt.submit', (_: unknown, e: unknown) => e)
+  on('turn.start', (_: unknown, e: unknown) => e)
+  on('turn.complete', (_: unknown, e: unknown) => e)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.tool.call({
+    tool: 'TodoWrite',
+    todos: [{ content: 'Only step', activeForm: 'Doing it', status: 'completed' }],
+  } as never)
+
+  const band = await $.ui.mount(BAND)
+  expect((await pixelSources(band)).some(s => s.includes('Done'))).toBe(true)
+  await $.prompt.submit({ text: 'next question', origin: { kind: 'human' } } as never)
+  await band.unmount()
+  const after = await $.ui.mount(BAND)
+  expect((await pixelSources(after)).some(s => s.includes('Done'))).toBe(false)
+  await after.unmount()
+})

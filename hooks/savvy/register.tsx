@@ -1,7 +1,11 @@
+import { deckBand } from '../deck/register'
 import { atom, read, update } from 'claude-code'
 import type { AgentSpawnInput, EngineInterface, PluginOptions, Register } from 'claude-code'
 
 import { DOCK, dockClose, dockIsOpen, dockOpen } from '../dock'
+import { setLang } from '../lang'
+import { CNY_PER_USD, makePricing } from './pricing'
+import type { Currency, Pricing, Usage } from './pricing'
 import type { AgentRun, AgentStatus, Flow, Frame, MainUsage, Panel, Phase, PlannedTask, RateWindow, SavvyMeter as Meter, TokenSplit } from '../../types'
 
 const MAIN0: MainUsage = { model: '', tokens: 0, costUsd: 0, steps: 0 }
@@ -109,7 +113,7 @@ const STRINGS = {
     busy: 'running',
     mainSession: 'Main session',
     subagents: 'Subagents',
-    estimate: '≈ estimated in ¥ from token counts and the gateway price list; not a bill',
+    estimate: '≈ estimated from token counts and the price list in settings; not a bill',
     hideDone: 'Hide finished',
     showDone: 'Show finished',
     auto: 'auto',
@@ -181,7 +185,7 @@ const STRINGS = {
     busy: '运行中',
     mainSession: '主会话',
     subagents: '子代理',
-    estimate: '≈ 按令牌数和价目表折算的人民币估算值，不是账单',
+    estimate: '≈ 按令牌数和设置里的价目表折算的估算值，不是账单',
     hideDone: '隐藏已完成',
     showDone: '显示已完成',
     auto: '自动',
@@ -293,8 +297,15 @@ const xml = (s: string): string =>
 const clip = (s: string, max: number): string => (s.length > max ? s.slice(0, Math.max(1, max - 1)) + '…' : s)
 
 // Rough advance of system UI text, in em; good enough to size the title's slot.
+// CJK characters and fullwidth forms are a full em wide.
 const charEm = (ch: string): number =>
-  /[\s.,:;'|!il1()[\]]/.test(ch) ? 0.3 : /[A-ZА-ЯЁmwшщжюМШЩЖЮ@%]/.test(ch) ? 0.72 : 0.56
+  /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe6f\uff00-\uff60\uffe0-\uffe6]/.test(ch)
+    ? 1
+    : /[\s.,:;'|!il1()[\]]/.test(ch)
+      ? 0.3
+      : /[A-ZА-ЯЁmwшщжюМШЩЖЮ@%]/.test(ch)
+        ? 0.72
+        : 0.56
 
 const textWidth = (s: string, size: number): number => [...s].reduce((w, ch) => w + charEm(ch) * size, 0)
 
@@ -424,43 +435,10 @@ const TIER_MODEL: Record<string, string> = {
   light: 'Opus · low',
 }
 
-// CNY (¥) per million tokens, the company gateway's price list: input, output,
-// cache read, cache write (5-minute TTL). The engine reports tokens, not money, so
-// the panel's cost is always computed here. Haiku is tiered by the request's prompt
-// size: `from` is the smallest prompt (input + cache read + cache write) of a tier.
-type Price = { from: number; input: number; output: number; cacheRead: number; cacheWrite: number }
-const OPUS: Price[] = [{ from: 0, input: 28, output: 140, cacheRead: 1.4, cacheWrite: 35 }]
-const SONNET: Price[] = [{ from: 0, input: 14, output: 70, cacheRead: 0.7, cacheWrite: 17.5 }]
-const HAIKU: Price[] = [
-  { from: 0, input: 0.7, output: 3.5, cacheRead: 0.07, cacheWrite: 0.88 },
-  { from: 100_000, input: 3.5, output: 17.5, cacheRead: 0.35, cacheWrite: 4.38 },
-]
-const PRICES: [RegExp, Price[]][] = [
-  [/haiku/, HAIKU],
-  [/sonnet/, SONNET],
-  [/opus/, OPUS],
-]
-
-type Usage = {
-  input_tokens: number
-  output_tokens: number
-  cache_read_input_tokens: number
-  cache_creation_input_tokens: number
-}
-
-// A model the list does not name is priced as Opus, the dearest, so cost is never understated.
-const priceOf = (model: string, promptTokens: number): Price => {
-  const tiers = PRICES.find(([re]) => re.test(model.toLowerCase()))?.[1] ?? OPUS
-  return [...tiers].reverse().find(t => promptTokens >= t.from) ?? tiers[0] ?? OPUS[0]!
-}
-
-const costOf = (model: string, u: Usage): number => {
-  const input = u.input_tokens || 0
-  const read = u.cache_read_input_tokens || 0
-  const write = u.cache_creation_input_tokens || 0
-  const p = priceOf(model, input + read + write)
-  return (input * p.input + (u.output_tokens || 0) * p.output + read * p.cacheRead + write * p.cacheWrite) / 1e6
-}
+// Prices and the currency come from the `currency` and `modelPrices` options: see ./pricing.
+// The engine reports tokens, not money, so the panel's cost is always computed here.
+let pricing: Pricing = makePricing()
+const costOf = (model: string, u: Usage): number => pricing.costOf(model, u)
 
 // A planned task's model: the one the orchestrator named, else its tier's default.
 const plannedModel = (p: PlannedTask, tier: string): string =>
@@ -510,8 +488,8 @@ const norm = (s: string): string => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, 
 const fmtTokens = (n: number): string =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${Math.round(n)}`
 
-// Amounts are in CNY: `costUsd` fields keep their old name but hold ¥.
-const fmtCost = (cny: number): string => `¥${cny < 10 ? cny.toFixed(2) : cny.toFixed(1)}`
+// Amounts are in the chosen currency: `costUsd` fields keep their old name but hold that currency.
+const fmtCost = (amount: number): string => `${pricing.symbol}${amount < 10 ? amount.toFixed(2) : amount.toFixed(1)}`
 
 const fmtTime = (ms: number): string => {
   const s = Math.max(0, Math.round(ms / 1000))
@@ -1464,13 +1442,14 @@ type Any = any
 // restart, and these figures are the plugin's own, so they must be kept here.
 const COST_PREFIX = 'cost:'
 const MAX_SAVED_AGENTS = 100
-type SavedCost = { main: MainUsage; agents: AgentRun[]; transcriptPath: string; savedAt: number }
+// `currency` is what the saved amounts are in; an entry without one was saved when the panel counted only ¥.
+type SavedCost = { main: MainUsage; agents: AgentRun[]; transcriptPath: string; savedAt: number; currency?: Currency }
 
 async function saveCost($: EngineInterface): Promise<void> {
   try {
     const [id, info, m, list] = await Promise.all([$.session.id(), $.session.info(), read($, main), read($, agents)])
     if (!id || m.steps + list.length === 0) return
-    const saved: SavedCost = { main: m, agents: list.slice(-MAX_SAVED_AGENTS), transcriptPath: info.transcriptPath, savedAt: await $.clock.now() }
+    const saved: SavedCost = { main: m, agents: list.slice(-MAX_SAVED_AGENTS), transcriptPath: info.transcriptPath, savedAt: await $.clock.now(), currency: pricing.currency }
     await $.store.set(COST_PREFIX + id, saved)
   } catch {
     // The store is full or this host keeps none: the figures stay in memory.
@@ -1485,9 +1464,13 @@ async function restoreCost($: EngineInterface): Promise<void> {
     if (!id || m.steps > 0 || list.length > 0) return
     const saved = (await $.store.get(COST_PREFIX + id)) as SavedCost | undefined
     if (!saved?.main) return
-    await update($, main, () => ({ ...MAIN0, ...saved.main, turnStartedAt: undefined }))
+    // Amounts saved in the other currency are converted at the fixed rate, since the model of each past request is gone.
+    const was: Currency = saved.currency ?? 'CNY'
+    const k = was === pricing.currency ? 1 : was === 'CNY' ? 1 / CNY_PER_USD : CNY_PER_USD
+    const byModel = saved.main.byModel ? Object.fromEntries(Object.entries(saved.main.byModel).map(([n, v]) => [n, { ...v, costUsd: v.costUsd * k }])) : undefined
+    await update($, main, () => ({ ...MAIN0, ...saved.main, costUsd: saved.main.costUsd * k, ...(byModel ? { byModel } : {}), turnStartedAt: undefined }))
     // A helper that was running when the session ended is not running now.
-    await update($, agents, () => (saved.agents ?? []).map(a => (a.status === 'running' ? { ...a, status: 'failed' as AgentStatus, endedAt: a.endedAt ?? saved.savedAt } : a)))
+    await update($, agents, () => (saved.agents ?? []).map(a => ({ ...a, costUsd: a.costUsd * k, ...(a.status === 'running' ? { status: 'failed' as AgentStatus, endedAt: a.endedAt ?? saved.savedAt } : {}) })))
   } catch {
     // Nothing saved, or unreadable: start from zero.
   }
@@ -1511,11 +1494,17 @@ async function pruneCost($: EngineInterface): Promise<void> {
 let options: PluginOptions = {}
 export const init = (given: PluginOptions): void => {
   options = given
+  pricing = makePricing(given)
 }
 
 export async function savvy_session_start($: EngineInterface, e: Any, next: Any): Promise<Any> {
   const started = await next(e)
   lang = await detectLang($, options.agentsLanguage)
+  setLang(lang)
+  // A price line that could not be read is left out of the table; say so, with the line, so a typo does not go unnoticed.
+  if (pricing.rejected.length > 0) {
+    void $.ui.toast(`side-dock-claude: modelPrices ignored ${pricing.rejected.map(r => `"${r}"`).join(', ')}`).catch(() => undefined)
+  }
   await $.tool.register({
     name: 'progress',
     description:
@@ -2193,16 +2182,11 @@ export async function savvy_ui_render_AbovePrompt($: EngineInterface, e: Any, ne
           <Svg source={stats.source} alt={statsAlt} width={stats.width} height={H} />
           {details}
         </Box>
-        {f && (
-          <Box key="savvy-flow" flexDirection="row" alignItems="center" gap={1}>
-            <Svg
-              source={rowSvg(f, flowW, list.some(a => a.status === 'running'), crew)}
-              alt={`${f.title}: ${label(f)}, ${percent}${crewText ? `, ${crewText}` : ''}`}
-              width={flowW}
-              height={H}
-            />
+        {deckBand(flowW, Date.now()).map(row => (
+          <Box key={`deck-${row.key}`} flexDirection="row" alignItems="center" gap={1}>
+            <Svg source={row.source} alt={row.alt} width={row.width} height={row.height} />
           </Box>
-        )}
+        ))}
       </Box>
     )
   }
