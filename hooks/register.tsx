@@ -1,13 +1,13 @@
 import { atom, read } from 'claude-code'
 import type { EngineInterface, HookFor, Register } from 'claude-code'
 
-import { init as crabInit, crab_agent_spawn, crab_classic_PermissionRequest, crab_classic_Stop, crab_classic_SubagentStart, crab_command_run_COMMAND, crab_session_compact, crab_session_end, crab_session_measure, crab_session_start, crab_tool_call, crab_turn_complete, crab_turn_start, crab_turn_step, crab_ui_press_side_dock, crab_ui_render_AbovePrompt, crab_ui_render_Pane_PANE } from './crab/register'
+import { init as crabInit, crab_agent_spawn, crab_classic_PermissionRequest, crab_classic_Stop, crab_classic_SubagentStart, crab_command_run_COMMAND, crab_session_compact, crab_session_end, crab_session_measure, crab_session_start, crab_tool_call, crab_turn_complete, crab_turn_start, crab_turn_step, crab_ui_press_side_dock_claude, crab_ui_render_AbovePrompt, crab_ui_render_Pane_PANE } from './crab/register'
 import type { DockSections } from '../types'
 import { DOCK, dockClose, setDockTitle } from './dock'
 import { init as lotInit, lot_agent_spawn, lot_classic_PreToolUse, lot_classic_SessionStart, lot_classic_UserPromptSubmit, lot_command_run_lot_map, lot_prompt_submit, lot_session_compact, lot_session_start, lot_skill_prompt, lot_tool_call, lot_turn_complete, lot_turn_start, lot_turn_step, lot_ui_render_Pane_PANE } from './lot/register'
 import { init as savvyInit, savvy_agent_spawn, savvy_command_run_agent_routing, savvy_command_run_agents_info, savvy_prompt_submit, savvy_session_measure, savvy_session_start, savvy_tool_call_Agent, savvy_tool_call_STEP_TOOL, savvy_tool_call_TOOL, savvy_turn_complete, savvy_turn_start, savvy_turn_step, savvy_ui_close, savvy_ui_render_AbovePrompt, savvy_ui_render_Pane_PANE } from './savvy/register'
 
-// side-dock: crab-cam, lot-map and savvy-progress as they are, gathered into one
+// side-dock-claude: crab-cam, lot-map and savvy-progress as they are, gathered into one
 // pane at the right, top to bottom:
 //   crab-cam: the crab and its shell, then the Crab crew while it is open
 //   lot-map: the work map and its rows
@@ -19,15 +19,15 @@ import { init as savvyInit, savvy_agent_spawn, savvy_command_run_agent_routing, 
 // Their drawings of the band and of their own panes are drawn as the dock's sections.
 
 // Which of the closable sections are up; dock.ts writes the same value.
-const sections = atom({ plugin: 'side-dock', key: 'sections' } as const, { crew: false, agents: true } as DockSections)
+const sections = atom({ plugin: 'side-dock-claude', key: 'sections' } as const, { crew: false, agents: true } as DockSections)
 
 // biome-ignore lint: the parts' hooks each take their own narrowed input.
 type Any = any
 
 // savvy-progress matched its tool calls by name; the rest pass beneath it.
 function savvyToolCall($: EngineInterface, e: Any, next: Any): Any {
-  if (e.tool === 'mcp__side-dock__progress') return savvy_tool_call_TOOL($, e, next)
-  if (e.tool === 'mcp__side-dock__step') return savvy_tool_call_STEP_TOOL($, e, next)
+  if (e.tool === 'mcp__side-dock-claude__progress') return savvy_tool_call_TOOL($, e, next)
+  if (e.tool === 'mcp__side-dock-claude__step') return savvy_tool_call_STEP_TOOL($, e, next)
   if (e.tool === 'Agent') return savvy_tool_call_Agent($, e, next)
   return next(e)
 }
@@ -35,7 +35,7 @@ function savvyToolCall($: EngineInterface, e: Any, next: Any): Any {
 // savvy-flow's skill names savvy-progress's tools, which the dock serves now under its own name.
 const renameTools: HookFor<'skill.prompt'> = ($, e, next) =>
   e.text.includes('mcp__savvy-progress__')
-    ? next({ ...e, text: e.text.split('mcp__savvy-progress__').join('mcp__side-dock__') })
+    ? next({ ...e, text: e.text.split('mcp__savvy-progress__').join('mcp__side-dock-claude__') })
     : next(e)
 
 const none = async () => null
@@ -102,7 +102,7 @@ export const register: Register = (on, options) => {
   on('classic.PreToolUse', ($, e, next) => lot_classic_PreToolUse($, e, next))
   on('classic.UserPromptSubmit', ($, e, next) => lot_classic_UserPromptSubmit($, e, next))
   on('classic.SessionStart', ($, e, next) => lot_classic_SessionStart($, e, next))
-  on('ui.press', { plugin: 'side-dock' }, ($, e, next) => crab_ui_press_side_dock($, e, next))
+  on('ui.press', { plugin: 'side-dock-claude' }, ($, e, next) => crab_ui_press_side_dock_claude($, e, next))
 
   // Above the prompt, one row of the dock's: the crab on top, and under it savvy-progress's
   // stats row (cost, tokens, context, time, Details) with the flow's progress bar while one runs.

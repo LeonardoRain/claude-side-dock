@@ -4,7 +4,7 @@ import type { EngineInterface, UiOpenResult } from 'claude-code'
 import type { DockSection, DockSections } from '../types'
 
 // The one pane every part draws into, stacked top to bottom.
-export const DOCK = 'side-dock'
+export const DOCK = 'side-dock-claude'
 // The tab's title follows the language the dock is set to; register sets it.
 let title = 'Dock'
 export const setDockTitle = (next: string): void => {
@@ -14,7 +14,7 @@ export const setDockTitle = (next: string): void => {
 // Which optional sections are up. The crab's band and the map are always drawn;
 // the Crab crew and the Session panel were panes of their own that opened and
 // closed, and now they are sections that do the same inside the dock; the Session panel starts open.
-export const sections = atom({ plugin: 'side-dock', key: 'sections' } as const, { crew: false, agents: true } as DockSections)
+export const sections = atom({ plugin: 'side-dock-claude', key: 'sections' } as const, { crew: false, agents: true } as DockSections)
 
 async function isDockShown($: EngineInterface, mustBeShown: boolean): Promise<boolean> {
   const panes = await $.ui.panes().catch(() => [])

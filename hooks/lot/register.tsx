@@ -30,7 +30,7 @@ const CREW_NAMES = 32
 const ZOOMS = [160, 200, 240, 280, 340, 400]
 
 // Change the tag when a field of Entry or Board changes: it declines what an earlier version stored.
-const board = atom({ plugin: 'side-dock', key: 'board' } as const, { entries: [], counts: {} } as Board, { shape: 'board-4' })
+const board = atom({ plugin: 'side-dock-claude', key: 'board' } as const, { entries: [], counts: {} } as Board, { shape: 'board-4' })
 
 const newId = (now: number): string => `${now.toString(36)}${Math.random().toString(36).slice(2, 7)}`
 

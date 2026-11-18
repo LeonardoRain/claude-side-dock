@@ -8,16 +8,16 @@ const MAIN0: MainUsage = { model: '', tokens: 0, costUsd: 0, steps: 0 }
 const METER0: Meter = { startedAt: 0, contextWindow: 0, rateLimits: [] }
 
 // The live values, written as events arrive; the drawings read `frame` alone.
-const flow = atom({ plugin: 'side-dock', key: 'flow' } as const, null)
-const agents = atom({ plugin: 'side-dock', key: 'agents' } as const, [])
-const panel = atom({ plugin: 'side-dock', key: 'panel' } as const, {
+const flow = atom({ plugin: 'side-dock-claude', key: 'flow' } as const, null)
+const agents = atom({ plugin: 'side-dock-claude', key: 'agents' } as const, [])
+const panel = atom({ plugin: 'side-dock-claude', key: 'panel' } as const, {
   isCompact: false,
   isDoneCollapsed: false,
   autoOpenedFor: '',
 })
-const main = atom({ plugin: 'side-dock', key: 'savvyMain' } as const, MAIN0)
-const meter = atom({ plugin: 'side-dock', key: 'savvyMeter' } as const, METER0)
-const frame = atom({ plugin: 'side-dock', key: 'savvyFrame' } as const, {
+const main = atom({ plugin: 'side-dock-claude', key: 'savvyMain' } as const, MAIN0)
+const meter = atom({ plugin: 'side-dock-claude', key: 'savvyMeter' } as const, METER0)
+const frame = atom({ plugin: 'side-dock-claude', key: 'savvyFrame' } as const, {
   flow: null,
   agents: [],
   main: MAIN0,
@@ -25,8 +25,8 @@ const frame = atom({ plugin: 'side-dock', key: 'savvyFrame' } as const, {
   at: 0,
 } as Frame)
 
-const TOOL = 'mcp__side-dock__progress'
-const STEP_TOOL = 'mcp__side-dock__step'
+const TOOL = 'mcp__side-dock-claude__progress'
+const STEP_TOOL = 'mcp__side-dock-claude__step'
 const PANE = 'savvy-agents'
 const PHASES: readonly Phase[] = ['plan', 'design', 'delegate', 'review', 'close']
 const ACCENT = '#8f8cf4'
@@ -1651,7 +1651,7 @@ export async function savvy_command_run_agent_routing($: EngineInterface, e: Any
   if (!changes) return { text: s.routingUsage }
 
   for (const [key, value] of Object.entries(changes)) {
-    const result = await $.config.set({ key: `side-dock.${key}`, value })
+    const result = await $.config.set({ key: `side-dock-claude.${key}`, value })
     if (result.deny !== undefined) return { text: `${s.routingDenied}: ${result.deny}` }
   }
   return { text: `${s.routingSet}\n${describe({ ...current, ...changes })}` }

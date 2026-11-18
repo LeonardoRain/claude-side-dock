@@ -1,12 +1,12 @@
-# claude-side-dock
+# side-dock-claude
 
 > 把 **crab-cam**、**lot-map**、**savvy-progress** 三个公开 mod 合并重制的 Claude Code 桌面版侧边面板。
 > A Claude Code (desktop app) mod that merges three public mods into one right-side **Dock** pane plus one row above the prompt.
 
 三个原版 mod 各占一个面板、各自注册命令，同时装三个会挤占界面、互相重复。这个 mod 把它们收进**同一个右侧 Dock**，并补上了原版没有的几处能力（费用持久化、人民币估价、子代理模型路由、中文界面等），按我自己的使用习惯打磨而成。
 
-- 插件 id：`side-dock`（仓库名为 `claude-side-dock`）
-- 当前版本：0.2.3
+- 插件 id、marketplace 名与仓库名都是 `side-dock-claude`
+- 当前版本：0.2.4
 - 技术栈：TypeScript / TSX，通过 Claude Code mod 的 `hooks` 机制运行，无构建步骤、无外部运行时依赖
 - 许可：MIT（上游三个项目同为 MIT，版权声明原样保留，见文末）
 
@@ -33,13 +33,13 @@
 ## 安装
 
 ```
-/plugin marketplace add LeonardoRain/claude-side-dock
-/plugin install side-dock --marketplace claude-side-dock
+/plugin marketplace add LeonardoRain/side-dock-claude
+/plugin install side-dock-claude --marketplace side-dock-claude
 ```
 
 > **请先停用原来的 crab-cam、lot-map、savvy-progress 三个 mod**，否则命令和画面会重复出现。
 
-安装后会提供两个 MCP 工具，供 `savvy-flow` 技能上报进度：`mcp__side-dock__progress`（整体计划）与 `mcp__side-dock__step`（单个子代理的步骤）。技能文本里原有的 `mcp__savvy-progress__*` 名称会被自动改写为 `mcp__side-dock__*`，无需手改技能。
+安装后会提供两个 MCP 工具，供 `savvy-flow` 技能上报进度：`mcp__side-dock-claude__progress`（整体计划）与 `mcp__side-dock-claude__step`（单个子代理的步骤）。技能文本里原有的 `mcp__savvy-progress__*` 名称会被自动改写为 `mcp__side-dock-claude__*`，无需手改技能。
 
 ---
 
@@ -61,7 +61,7 @@
 
 ## 在三个原版之上做的改动
 
-1. **合并为一个面板**：三个原版各开自己的面板，这里统一画进同一个 Dock，所有状态（atom）都归在 `side-dock` 插件名下。三个 mod 的同名事件钩子被串成一条链（crab-cam 在最外层），某一部分绘制失败只会让自己那块留空，不会拖垮其他部分。
+1. **合并为一个面板**：三个原版各开自己的面板，这里统一画进同一个 Dock，所有状态（atom）都归在 `side-dock-claude` 插件名下。三个 mod 的同名事件钩子被串成一条链（crab-cam 在最外层），某一部分绘制失败只会让自己那块留空，不会拖垮其他部分。
 2. **会话成本跨重启保留**：成本按会话 id 存入 `$.store`（键 `cost:<session id>`），重启后恢复；下次启动时清理对话记录已不存在的条目。注意：mod 无法感知"归档"，被归档的会话会保留其成本记录。
 3. **人民币（¥）估价**：引擎只上报令牌数，不报金额，所以面板里的费用都是按令牌数乘价目表**估算**的，单位 ¥ / 百万令牌，代码里内置的价目表只是**示例**（Opus、Sonnet、Haiku 三档，Haiku 按单次请求的提示长度分两档），并不代表官方定价或任何特定服务商的价格。未识别的模型按最贵的 Opus 计价，宁可高估也不低估。**这是估算值，不是账单**；请按自己实际使用的服务商价格修改 `hooks/savvy/register.tsx` 中的 `PRICES`。
 4. **子代理模型路由**：当 `Agent` 调用没有指定模型时，可为 `Explore` 与 `general-purpose` 两类内置子代理分别指定默认模型。
@@ -122,7 +122,7 @@ claude plugin test .
 claude --plugin-dir .          # 编辑时热加载
 ```
 
-已安装的副本按版本号缓存：改动后需要把 `.claude-plugin/plugin.json` 的 `version` 加一，再运行 `claude plugin update side-dock@claude-side-dock` 才会生效。
+已安装的副本按版本号缓存：改动后需要把 `.claude-plugin/plugin.json` 的 `version` 加一，再运行 `claude plugin update side-dock-claude@side-dock-claude` 才会生效。
 
 ---
 

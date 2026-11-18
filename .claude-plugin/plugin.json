@@ -1,6 +1,6 @@
 {
-  "name": "side-dock",
-  "version": "0.2.3",
+  "name": "side-dock-claude",
+  "version": "0.2.4",
   "description": "crab-cam, lot-map and savvy-progress 1.2 in one right-side pane (Session panel on top, work map below) and one row above the prompt",
   "license": "MIT",
   "types": "./types/index.d.ts",
@@ -206,8 +206,8 @@
       ]
     }
   },
-  "homepage": "https://github.com/LeonardoRain/claude-side-dock",
-  "repository": "https://github.com/LeonardoRain/claude-side-dock",
+  "homepage": "https://github.com/LeonardoRain/side-dock-claude",
+  "repository": "https://github.com/LeonardoRain/side-dock-claude",
   "author": {
     "name": "LeonardoRain"
   }

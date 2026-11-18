@@ -72,17 +72,17 @@ const DEMO: readonly Activity[] = [
   'done',
 ]
 
-const scene = atom({ plugin: 'side-dock', key: 'scene' } as const, { activity: 'idle', detail: '' })
-const isHidden = atom({ plugin: 'side-dock', key: 'isHidden' } as const, false)
-const frame = atom({ plugin: 'side-dock', key: 'frame' } as const, 0)
-const meter = atom({ plugin: 'side-dock', key: 'meter' } as const, { context: null, fiveHour: null, week: null })
-const isMetered = atom({ plugin: 'side-dock', key: 'isMetered' } as const, true)
-const isDetailed = atom({ plugin: 'side-dock', key: 'isDetailed' } as const, false)
+const scene = atom({ plugin: 'side-dock-claude', key: 'scene' } as const, { activity: 'idle', detail: '' })
+const isHidden = atom({ plugin: 'side-dock-claude', key: 'isHidden' } as const, false)
+const frame = atom({ plugin: 'side-dock-claude', key: 'frame' } as const, 0)
+const meter = atom({ plugin: 'side-dock-claude', key: 'meter' } as const, { context: null, fiveHour: null, week: null })
+const isMetered = atom({ plugin: 'side-dock-claude', key: 'isMetered' } as const, true)
+const isDetailed = atom({ plugin: 'side-dock-claude', key: 'isDetailed' } as const, false)
 // Whether a command shows as typed rather than by its description.
-const isRaw = atom({ plugin: 'side-dock', key: 'isRaw' } as const, false)
-const crew = atom({ plugin: 'side-dock', key: 'crew' } as const, NO_CREW)
-const demoCrew = atom({ plugin: 'side-dock', key: 'demoCrew' } as const, null as Crew | null)
-const crewView = atom({ plugin: 'side-dock', key: 'crewView' } as const, { open: [], folded: [] } as CrewView)
+const isRaw = atom({ plugin: 'side-dock-claude', key: 'isRaw' } as const, false)
+const crew = atom({ plugin: 'side-dock-claude', key: 'crew' } as const, NO_CREW)
+const demoCrew = atom({ plugin: 'side-dock-claude', key: 'demoCrew' } as const, null as Crew | null)
+const crewView = atom({ plugin: 'side-dock-claude', key: 'crewView' } as const, { open: [], folded: [] } as CrewView)
 
 // The band's button that opens the pane while a crew works and it is closed.
 const WATCH = 'watch-crew'
@@ -1393,7 +1393,7 @@ export async function crab_ui_render_Pane_PANE($: Parameters<MatchedHook<'ui.ren
 
 // The band's Watch crew opens the pane, and the band is drawn again without
 // it. A card's steps unfold and fold again, and so does a group.
-export async function crab_ui_press_side_dock($: Parameters<MatchedHook<'ui.press', { plugin: 'side-dock' }>>[0], e: Parameters<MatchedHook<'ui.press', { plugin: 'side-dock' }>>[1], next: Parameters<MatchedHook<'ui.press', { plugin: 'side-dock' }>>[2]): Promise<Awaited<ReturnType<MatchedHook<'ui.press', { plugin: 'side-dock' }>>>> {
+export async function crab_ui_press_side_dock_claude($: Parameters<MatchedHook<'ui.press', { plugin: 'side-dock-claude' }>>[0], e: Parameters<MatchedHook<'ui.press', { plugin: 'side-dock-claude' }>>[1], next: Parameters<MatchedHook<'ui.press', { plugin: 'side-dock-claude' }>>[2]): Promise<Awaited<ReturnType<MatchedHook<'ui.press', { plugin: 'side-dock-claude' }>>>> {
   const [steps, group] = [stepsKey(''), groupKey('')]
 
   if (e.element === WATCH) {

@@ -1,9 +1,9 @@
 import { expect, test } from 'claude-code/testing'
 
 const DOCK = {
-  plugin: 'side-dock',
+  plugin: 'side-dock-claude',
   component: 'Pane',
-  requestId: 'side-dock',
+  requestId: 'side-dock-claude',
   props: {
     title: 'Dock',
     isFocused: false,
@@ -20,7 +20,7 @@ function engine(on: any) {
   on('command.register', () => ({ value: {} }))
   on('tool.register', () => ({ value: {} }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
-  on('ui.panes', () => ({ value: [{ id: 'side-dock', title: 'Dock', isShown: true, isFocused: false, isPlaced: true }] }))
+  on('ui.panes', () => ({ value: [{ id: 'side-dock-claude', title: 'Dock', isShown: true, isFocused: false, isPlaced: true }] }))
   on('session.usage', () => ({ value: { context: {}, rateLimits: [] } }))
   on('session.start', (_: unknown, e: { cwd: string }) => ({ cwd: e.cwd }))
   on('tool.call', () => ({ result: {} }))
@@ -66,10 +66,10 @@ test('the Session panel stands at the top of the dock, above the work map', asyn
 test('a savvy flow shows its progress bar above the prompt', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
-  await $.tool.call({ tool: 'mcp__side-dock__progress', title: 'Demo', total: 3, done: 1, phase: 'delegate' })
+  await $.tool.call({ tool: 'mcp__side-dock-claude__progress', title: 'Demo', total: 3, done: 1, phase: 'delegate' })
 
   const band = await $.ui.mount({
-    plugin: 'side-dock',
+    plugin: 'side-dock-claude',
     component: 'AbovePrompt',
     surface: 'desktop',
     props: { hasSurvey: false, isWorking: false, bodyColumns: 100 },

@@ -271,7 +271,7 @@ export type DockSections = Record<DockSection, boolean>
 
 declare module 'claude-code' {
   interface PluginState {
-    'side-dock': {
+    'side-dock-claude': {
       // crab-cam
       scene: Scene
       isHidden: boolean

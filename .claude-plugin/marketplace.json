@@ -1,5 +1,5 @@
 {
-  "name": "claude-side-dock",
+  "name": "side-dock-claude",
   "owner": { "name": "LeonardoRain" },
-  "plugins": [{ "name": "side-dock", "source": "./", "description": "Right-side dock for Claude Code desktop: session cost, work map, crab crew" }]
+  "plugins": [{ "name": "side-dock-claude", "source": "./", "description": "Right-side dock for Claude Code desktop: session cost, work map, crab crew" }]
 }
