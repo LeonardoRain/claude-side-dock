@@ -1,0 +1,221 @@
+{
+  "name": "side-dock",
+  "version": "0.2.3",
+  "description": "crab-cam, lot-map and savvy-progress 1.2 in one right-side pane (Session panel on top, work map below) and one row above the prompt",
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Work map language（工作地图语言）",
+      "options": [
+        "en",
+        "ru",
+        "es",
+        "fr",
+        "de",
+        "it",
+        "pt",
+        "zh"
+      ],
+      "default": "en",
+      "description": "The language of the labels on the map. 地图标签的语言，zh 为简体中文。"
+    },
+    "coreName": {
+      "type": "string",
+      "title": "Name at the centre（中心名称）",
+      "default": "CLAUDE",
+      "description": "What the circle in the middle of the map says, up to ten characters. 地图中央圆圈显示的文字，最多十个字符。"
+    },
+    "memoryServers": {
+      "type": "string",
+      "multiple": true,
+      "title": "Memory servers（记忆服务器）",
+      "default": [
+        "memory"
+      ],
+      "description": "MCP servers whose tools light the Memory station. 工具会点亮“记忆”站点的 MCP 服务器。"
+    },
+    "memoryCommands": {
+      "type": "string",
+      "multiple": true,
+      "title": "Memory commands（记忆命令）",
+      "default": [],
+      "description": "Shell commands or scripts that light the Memory station. A name counts when it is the command itself or begins with it and a hyphen, an underscore or a dot. 点亮“记忆”站点的 shell 命令或脚本。命令名本身，或以它开头后接连字符、下划线或点的名称都算。"
+    },
+    "memorySubcommands": {
+      "type": "string",
+      "multiple": true,
+      "title": "Memory subcommands（记忆子命令）",
+      "default": [],
+      "description": "Words after a memory command that the map may show, such as add or search. Without them a memory command goes by its own name, because the word after it may be content. 记忆命令后地图可显示的词，如 add、search。不填则只按命令名显示，因为后面的词可能是内容。"
+    },
+    "memoryPaths": {
+      "type": "string",
+      "multiple": true,
+      "title": "Memory paths（记忆路径）",
+      "default": [],
+      "description": "Parts of a path that make a file a memory. Claude Code's own memory folder always counts. 使文件被视为记忆的路径片段。Claude Code 自己的记忆文件夹始终计入。"
+    },
+    "memoryLabels": {
+      "type": "string",
+      "multiple": true,
+      "title": "Memory labels（记忆工具名称）",
+      "default": [],
+      "description": "Short names for memory tools, each written as tool=name. A tool without one goes by its own name. 记忆工具的简称，每条写成 tool=名称。未设置的工具按原名显示。"
+    },
+    "hookRecords": {
+      "type": "boolean",
+      "title": "Hooks add numbered records（钩子添加编号记录）",
+      "default": false,
+      "description": "Turn on if a hook of yours adds memory records numbered like [#123]: the map then shows them on the Memory station, by number only. It counts such numbers in the text of any hook, not only a memory one. 如果你的钩子会添加形如 [#123] 的编号记忆记录，请开启。开启后地图只在“记忆”站点按编号显示。它会统计任何钩子文本中的此类编号，不只记忆相关的钩子。"
+    },
+    "hookReasons": {
+      "type": "boolean",
+      "title": "Show why a hook refused（显示钩子拒绝的原因）",
+      "default": false,
+      "description": "Show the first line of a hook's refusal, up to 72 characters. Off, the map says only which tool was stopped: a refusal may quote what the hook found. 显示钩子拒绝理由的第一行，最多 72 个字符。关闭时地图只显示哪个工具被拦下，因为拒绝理由可能引用钩子发现的内容。"
+    },
+    "subagentNames": {
+      "type": "boolean",
+      "title": "Name subagents in the rows（在行中显示子代理名称）",
+      "default": false,
+      "description": "A subagent's model step says which subagent it is, by the few words it was started with, up to 40 characters. Off, it says only that it is a subagent. 子代理的模型步骤会用启动它时的几个词说明它是哪个子代理，最多 40 个字符。关闭时只说明它是子代理。"
+    },
+    "contextCost": {
+      "type": "boolean",
+      "title": "What each call adds to the context（每次调用对上下文的增量）",
+      "default": false,
+      "description": "Each row says about how many tokens the context grew by with its call's answer, and the desktop map adds each station's sum to its count. An estimate. 每行显示该调用的回答让上下文增长了约多少令牌，桌面地图会把各站点的合计加到计数上。这是估算值。"
+    },
+    "theme": {
+      "type": "string",
+      "title": "Colours（颜色）",
+      "options": [
+        "auto",
+        "dark",
+        "light"
+      ],
+      "default": "auto",
+      "description": "The map's colours: dark, light, or auto, which is dark on a dark surface and light on a light one. 地图颜色：dark（深色）、light（浅色），或 auto（自动，随界面背景深浅切换）。"
+    },
+    "background": {
+      "type": "string",
+      "title": "Background（背景）",
+      "options": [
+        "solid",
+        "transparent"
+      ],
+      "default": "solid",
+      "description": "The map's own background, or transparent, which lets the pane behind it show through. 地图自身的背景；选透明时，后面的内容会透出来。"
+    },
+    "colors": {
+      "type": "string",
+      "multiple": true,
+      "title": "Colours of your own（自定义颜色）",
+      "default": [],
+      "description": "Colours that replace the map's own, each written as name=#rrggbb. Names: background, node, line, spoke, text, label, faint, accent, active, error, memory, memoryActive, route. Set theme to dark or light with them. 替换地图自带颜色，每条写成 name=#rrggbb。名称有：background、node、line、spoke、text、label、faint、accent、active、error、memory、memoryActive、route。可配合 theme 设为 dark 或 light。"
+    },
+    "layout": {
+      "type": "string",
+      "title": "Layout（布局）",
+      "options": [
+        "you-top",
+        "you-bottom"
+      ],
+      "default": "you-top",
+      "description": "Where you are on the map: at the top, or at the bottom with the network and the browser at the top. 你在地图上的位置：顶部，或底部（此时网络和浏览器在顶部）。"
+    },
+    "motion": {
+      "type": "string",
+      "title": "Motion（动效）",
+      "options": [
+        "full",
+        "reduced"
+      ],
+      "default": "full",
+      "description": "With reduced, nothing on the map flies, spreads or spins: a call lights its station and its spoke, and what changes only fades. 选 reduced 时地图上不再有飞行、扩散或旋转：调用只点亮站点和连线，变化只做淡入淡出。"
+    },
+    "textSize": {
+      "type": "string",
+      "title": "Text size（文字大小）",
+      "options": [
+        "caption",
+        "footnote",
+        "body"
+      ],
+      "default": "footnote",
+      "description": "The size of the rows under the map: caption is smaller, body larger. A terminal has one size and ignores it. 地图下方文字行的大小：caption 较小，body 较大。终端只有一种字号，会忽略此项。"
+    },
+    "terminalView": {
+      "type": "string",
+      "title": "Terminal view（终端视图）",
+      "options": [
+        "text",
+        "picture",
+        "braille"
+      ],
+      "default": "text",
+      "description": "How the map looks in a terminal: text, the rows alone; picture, the map itself above them, in a terminal that shows pictures such as kitty or Ghostty, but not in iTerm2; or braille, the map above them in braille dots and letters, in any terminal whose font has braille, such as Windows Terminal. 地图在终端中的显示方式：text 只显示文字行；picture 在支持图片的终端（如 kitty、Ghostty）中在文字上方绘制地图，iTerm2 不支持；braille 用盲文点阵和字母在上方绘制地图，适用于字体支持盲文的终端（如 Windows Terminal）。"
+    },
+    "cellShape": {
+      "type": "number",
+      "title": "Terminal cell shape（终端字符格高宽比）",
+      "default": 2.4,
+      "description": "For the terminal picture: how many times taller a terminal cell is than it is wide, so that the picture fills its box. About 2.4 for iTerm2's Monaco 12, about 2 for Menlo in kitty. 终端图片用：一个终端字符格的高度是宽度的几倍，使图片填满区域。iTerm2 的 Monaco 12 约为 2.4，kitty 的 Menlo 约为 2。地图下方留白时调大，变形偏高时调小。取值 1.2 到 4。"
+    },
+    "agentsLanguage": {
+      "type": "string",
+      "title": "Session panel language（会话面板语言）",
+      "description": "auto follows Claude Code's language setting, then the system locale; en, ru or tr. 面板始终以英文显示为默认。auto 跟随系统语言。",
+      "default": "en",
+      "options": [
+        "auto",
+        "en",
+        "ru",
+        "tr"
+      ]
+    },
+    "autoOpen": {
+      "type": "string",
+      "title": "Open the agents panel（自动打开代理面板）",
+      "description": "savvy: when a savvy-flow worker starts or a plan is reported; any: also when any other subagent starts. savvy：savvy-flow 的工作代理启动或报告计划时打开；any：任何子代理启动时也打开。",
+      "default": "savvy",
+      "options": [
+        "savvy",
+        "any"
+      ]
+    },
+    "exploreModel": {
+      "type": "string",
+      "title": "Explore subagent model（Explore 子代理模型）",
+      "description": "Model for such a subagent when the Agent call names none. inherit: the main session's model; opus: Opus whatever the main session runs on. 当 Agent 调用未指定模型时使用的模型。inherit 沿用主会话模型。",
+      "default": "inherit",
+      "options": [
+        "inherit",
+        "haiku",
+        "sonnet",
+        "opus",
+        "fable"
+      ]
+    },
+    "generalModel": {
+      "type": "string",
+      "title": "General-purpose subagent model（通用子代理模型）",
+      "description": "Model for such a subagent when the Agent call names none. inherit: the main session's model; opus: Opus whatever the main session runs on. 当 Agent 调用未指定模型时使用的模型。inherit 沿用主会话模型。",
+      "default": "inherit",
+      "options": [
+        "inherit",
+        "haiku",
+        "sonnet",
+        "opus",
+        "fable"
+      ]
+    }
+  },
+  "homepage": "https://github.com/LeonardoRain/claude-side-dock",
+  "repository": "https://github.com/LeonardoRain/claude-side-dock",
+  "author": {
+    "name": "LeonardoRain"
+  }
+}
