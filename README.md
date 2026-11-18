@@ -41,4 +41,4 @@ Installed copies are cached by version: bump `version` in `.claude-plugin/plugin
 
 ## Credits and licence / 来源与许可
 
-The three parts are adapted from crab-cam, lot-map and savvy-progress. lot-map is MIT, © 2026 Aleksei Volodin (`LICENSE.lot-map`). The original licences of crab-cam and savvy-progress have not been verified yet; see `THIRD_PARTY.md`. The rest is MIT (`LICENSE`).
+Adapted from three MIT-licensed mods: [crab-cam](https://github.com/sTomerG/agent-kit) (Tomer Gabay), [lot-map](https://github.com/alexeyw/lot-map) (Aleksei Volodin) and savvy-progress ([sgs-kit](https://github.com/Phalegethon/sgs-kit) by Gürkan Süerdem, forked from [claude-kit](https://github.com/johnnyvizz/claude-kit) by johnnyvizz). Their licences are kept as `LICENSE.crab-cam`, `LICENSE.lot-map` and `LICENSE.savvy-progress`; details in `THIRD_PARTY.md`. The combination and the changes listed above are MIT too (`LICENSE`).
