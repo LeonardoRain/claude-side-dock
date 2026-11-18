@@ -4,7 +4,7 @@ import type { Board, Entry, StationId } from '../../types'
 import { formatTokens, shortModel } from './classify'
 import { DARK, LIGHT, lightRules } from './palette'
 import type { Palette } from './palette'
-import { FLAT_FONT, backdrop, lookFor } from './rich'
+import { FLAT_FONT, lookFor } from './rich'
 import type { Look, Pair } from './rich'
 import { STATIONS } from './setup'
 import type { Setup } from './setup'
@@ -170,9 +170,11 @@ type Scene = {
   look: Look | undefined
   /** The words' typeface: the plain map's monospace, or the Session panel's system font in the flat look. */
   font: string
+  /** Whether the words stand on a rim of the ground's color. The flat look drops it on a transparent ground, where it would show. */
+  hasRim: boolean
 }
 
-function station(s: (typeof STATIONS)[number], i: number, { entries, board, now, c, names, isStill, shift, spent, hue, look, font }: Scene): { under: string; over: string } {
+function station(s: (typeof STATIONS)[number], i: number, { entries, board, now, c, names, isStill, shift, spent, hue, look, font, hasRim }: Scene): { under: string; over: string } {
   const p = place(i, shift)
   const x = n1(p.x)
   const y = n1(p.y)
@@ -227,7 +229,7 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
   const glyph = (stroke: string): string =>
     `<path transform="translate(${x} ${y})" d="${s.icon}" fill="none" stroke="${stroke}" stroke-width="${look !== undefined ? 1.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"/>`
   // The words stand on a rim of the ground's own color, so a line that passes behind them never strikes them through.
-  const rim = `paint-order="stroke" stroke="${c.ground}" stroke-width="3.5" stroke-linejoin="round"`
+  const rim = hasRim ? `paint-order="stroke" stroke="${c.ground}" stroke-width="3.5" stroke-linejoin="round"` : ''
   let over = ''
   if (look === undefined) {
     over += `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${c.raised}" stroke="${c.line}" stroke-width="1.5"/>${cooling}${glyph(glyphColor)}`
@@ -240,9 +242,9 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
         : isLit || isAlarm
           ? `<g opacity="0"><animate attributeName="opacity" values="1;0" begin="${clock(-fade)}" dur="${clock(span)}" fill="freeze"/>${solid}</g>`
           : ''
-    over += `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${look.tint(s.id)}"/>${glyph(main)}${filled}`
+    over += `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${c.raised}"/>${glyph(main)}${filled}`
   }
-  over += `<text x="${x}" y="${n1(p.y + NODE + 16)}" text-anchor="middle" ${font} font-size="12.5"${look !== undefined ? ' font-weight="500"' : ''} ${rim} fill="${isLit || isAlarm ? c.bone : c.ash}">${names[s.id]}</text>`
+  over += `<text x="${x}" y="${n1(p.y + NODE + 16)}" text-anchor="middle" ${font} font-size="12.5" ${rim} fill="${isLit || isAlarm ? c.bone : c.ash}">${names[s.id]}</text>`
 
   if (count > 0) {
     // Memory keeps two counts: what was asked for, and what a hook brought down unasked.
@@ -304,9 +306,8 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
   // Without its ground the map keeps the rim around its words, in the ground's color: a faint halo on a surface of another shade.
   let body = setup.background === 'transparent' ? '' : `<rect width="${W}" height="${H}" rx="${look !== undefined ? 10 : 12}" fill="${c.ground}"/>`
 
-  // Contours around the core: dotted lines, or in the flat look solid bands under a slowly turning wedge.
-  if (look !== undefined) body += backdrop(CX, CY, now, isStill, look)
-  else {
+  // Contours around the core; the flat look keeps its ground clear, as the Session panel's cards are.
+  if (look === undefined) {
     for (const [rx, ry] of [[66, 62], [104, 97], [142, 132]]) {
       body += `<ellipse cx="${CX}" cy="${CY}" rx="${rx}" ry="${ry}" fill="none" stroke="${c.line}" stroke-width=".8" opacity=".7" stroke-dasharray="1.5 5" stroke-linecap="round"/>`
     }
@@ -324,7 +325,7 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
     if (worn > 0) body += `${line} stroke="${hue(s.id)[0]}" opacity="${n1(worn * (look !== undefined ? 0.7 : 0.55))}"/>`
   })
 
-  const scene: Scene = { entries: recent, board, now, c, names: setup.t.stations, isStill, shift, spent: withSpent && setup.contextCost ? board.spent : undefined, hue, look, font }
+  const scene: Scene = { entries: recent, board, now, c, names: setup.t.stations, isStill, shift, spent: withSpent && setup.contextCost ? board.spent : undefined, hue, look, font, hasRim: look === undefined || setup.background !== 'transparent' }
   const drawn = STATIONS.map((s, i) => station(s, i, scene))
   body += drawn.map(d => d.under).join('')
   body += trail(recent, now, c, isStill, shift, look, setup.colors.trail !== undefined)

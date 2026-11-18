@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.22
+- The work map's flat look is quieter, closer to the Session panel's cards: the stations' chips are neutral grey with the glyph in the station's color (they still fill in solid while working), and the rings' bands and the turning wedge are gone, so the ground stays clear. On a transparent background the words lose the rim that showed as a halo around them. What the map shows and does is unchanged, and so is the terminal's map.
+
 ## 0.2.21
 - The desktop work map now matches the Session panel above it: the same card ground and greys, the system font, and the same muted solid colors. Stations are flat color chips that fill in solid while they work; the rings are flat bands, the context reading is a thick round-capped bar in the panel's level colors, and the glow, gradients, dial ticks and turning arcs are gone. A soft wedge still turns slowly over the rings. What the map shows and does is unchanged, and so is the terminal's map.
 
