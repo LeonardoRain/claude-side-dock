@@ -1,6 +1,6 @@
 {
   "name": "side-dock-claude",
-  "version": "0.2.22",
+  "version": "0.2.23",
   "description": "crab-cam, lot-map and savvy-progress 1.2 in one right-side pane (Session panel on top, work map below) and one row above the prompt",
   "license": "MIT",
   "types": "./types/index.d.ts",

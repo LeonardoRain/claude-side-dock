@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.23
+- Fixed the desktop Pixel plan bar: the tag with the current step's name now always covers the bar's head. Before, a short bar drew its pixel fill past the tag's rounded end, and the tag was pushed outside the fill with an outline. Now the tag starts at the left edge while the bar is shorter than the tag, and once the bar is longer, the tag's right edge runs half a bar height past the head.
+
 ## 0.2.22
 - The work map's flat look is quieter, closer to the Session panel's cards: the stations' chips are neutral grey with the glyph in the station's color (they still fill in solid while working), and the rings' bands and the turning wedge are gone, so the ground stays clear. On a transparent background the words lose the rim that showed as a halo around them. What the map shows and does is unchanged, and so is the terminal's map.
 
