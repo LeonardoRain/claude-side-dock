@@ -1,6 +1,6 @@
 {
   "name": "side-dock-claude",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "crab-cam, lot-map and savvy-progress 1.2 in one right-side pane (Session panel on top, work map below) and one row above the prompt",
   "license": "MIT",
   "types": "./types/index.d.ts",
@@ -100,7 +100,7 @@
         "solid",
         "transparent"
       ],
-      "default": "solid",
+      "default": "transparent",
       "description": "The map's own background, or transparent, which lets the pane behind it show through. 地图自身的背景；选透明时，后面的内容会透出来。"
     },
     "colors": {
@@ -117,7 +117,7 @@
         "you-top",
         "you-bottom"
       ],
-      "default": "you-top",
+      "default": "you-bottom",
       "description": "Where you are on the map: at the top, or at the bottom with the network and the browser at the top. 你在地图上的位置：顶部，或底部（此时网络和浏览器在顶部）。"
     },
     "motion": {
@@ -149,7 +149,7 @@
         "picture",
         "braille"
       ],
-      "default": "text",
+      "default": "picture",
       "description": "How the map looks in a terminal: text, the rows alone; picture, the map itself above them, in a terminal that shows pictures such as kitty or Ghostty, but not in iTerm2; or braille, the map above them in braille dots and letters, in any terminal whose font has braille, such as Windows Terminal. 地图在终端中的显示方式：text 只显示文字行；picture 在支持图片的终端（如 kitty、Ghostty）中在文字上方绘制地图，iTerm2 不支持；braille 用盲文点阵和字母在上方绘制地图，适用于字体支持盲文的终端（如 Windows Terminal）。"
     },
     "cellShape": {
@@ -173,7 +173,7 @@
       "type": "string",
       "title": "Open the agents panel（自动打开代理面板）",
       "description": "savvy: when a savvy-flow worker starts or a plan is reported; any: also when any other subagent starts. savvy：savvy-flow 的工作代理启动或报告计划时打开；any：任何子代理启动时也打开。",
-      "default": "savvy",
+      "default": "any",
       "options": [
         "savvy",
         "any"
@@ -183,7 +183,7 @@
       "type": "string",
       "title": "Explore subagent model（Explore 子代理模型）",
       "description": "Model for such a subagent when the Agent call names none. inherit: the main session's model; opus: Opus whatever the main session runs on. 当 Agent 调用未指定模型时使用的模型。inherit 沿用主会话模型。",
-      "default": "inherit",
+      "default": "haiku",
       "options": [
         "inherit",
         "haiku",
@@ -196,7 +196,7 @@
       "type": "string",
       "title": "General-purpose subagent model（通用子代理模型）",
       "description": "Model for such a subagent when the Agent call names none. inherit: the main session's model; opus: Opus whatever the main session runs on. 当 Agent 调用未指定模型时使用的模型。inherit 沿用主会话模型。",
-      "default": "inherit",
+      "default": "sonnet",
       "options": [
         "inherit",
         "haiku",

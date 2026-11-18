@@ -6,7 +6,7 @@
 三个原版 mod 各占一个面板、各自注册命令，同时装三个会挤占界面、互相重复。这个 mod 把它们收进**同一个右侧 Dock**，并补上了原版没有的几处能力（费用持久化、人民币估价、子代理模型路由、中文界面等），按我自己的使用习惯打磨而成。
 
 - 插件 id、marketplace 名与仓库名都是 `side-dock-claude`
-- 当前版本：0.2.4
+- 当前版本：0.2.5
 - 技术栈：TypeScript / TSX，通过 Claude Code mod 的 `hooks` 机制运行，无构建步骤、无外部运行时依赖
 - 许可：MIT（上游三个项目同为 MIT，版权声明原样保留，见文末）
 
@@ -83,14 +83,14 @@
 | `language` | 工作地图与 Dock 标题的语言，`zh` 为简体中文 | `en` |
 | `agentsLanguage` | 会话面板语言：`auto`（跟随 Claude Code 语言设置，再跟随系统）/ en / zh | `en` |
 | `coreName` | 地图中心圆圈显示的文字，最多 10 个字符 | `CLAUDE` |
-| `theme` / `background` | 地图配色（auto / dark / light）与背景（solid / transparent）；`colors` 可按 `name=#rrggbb` 自定义单个颜色 | `auto` / `solid` |
-| `layout` / `motion` / `textSize` | 地图布局（你在上或在下）、动效（`reduced` 关闭飞行与旋转）、下方文字行字号 | `you-top` / `full` / `footnote` |
-| `terminalView` / `cellShape` | 在终端中的显示方式：`text` / `picture`（kitty、Ghostty 等）/ `braille`（盲文点阵） | `text` / `2.4` |
+| `theme` / `background` | 地图配色（auto / dark / light）与背景（solid / transparent）；`colors` 可按 `name=#rrggbb` 自定义单个颜色 | `auto` / `transparent` |
+| `layout` / `motion` / `textSize` | 地图布局（你在上或在下）、动效（`reduced` 关闭飞行与旋转）、下方文字行字号 | `you-bottom` / `full` / `footnote` |
+| `terminalView` / `cellShape` | 在终端中的显示方式：`text` / `picture`（kitty、Ghostty 等）/ `braille`（盲文点阵） | `picture` / `2.4` |
 | `memoryServers` / `memoryCommands` / `memorySubcommands` / `memoryPaths` / `memoryLabels` | 哪些 MCP 服务器、命令、路径算作"记忆"，用来点亮地图上的记忆站点 | `memory` |
 | `hookRecords` / `hookReasons` | 钩子产生的 `[#123]` 编号记录是否显示在记忆站点；是否显示钩子拒绝的原因（默认只显示哪个工具被拦，避免泄露钩子读到的内容） | 关 |
 | `subagentNames` / `contextCost` | 行内显示子代理名称；显示每次调用让上下文增长的估算令牌数 | 关 |
-| `autoOpen` | `savvy`：savvy-flow 启动时自动打开面板；`any`：任意子代理启动都打开 | `savvy` |
-| `exploreModel` / `generalModel` | 子代理模型路由的持久化选项，与 `/agent-routing` 等效 | `inherit` |
+| `autoOpen` | `savvy`：savvy-flow 启动时自动打开面板；`any`：任意子代理启动都打开 | `any` |
+| `exploreModel` / `generalModel` | 子代理模型路由的持久化选项，与 `/agent-routing` 等效 | `haiku` / `sonnet` |
 
 ---
 

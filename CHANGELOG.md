@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.5
+- Defaults now match the author's setup: `background` transparent, `layout` you-bottom, `terminalView` picture, `autoOpen` any, `exploreModel` haiku, `generalModel` sonnet.
+
 ## 0.2.4
 - Renamed the plugin from `side-dock` to `side-dock-claude` (a plugin name may not start with `claude-`): tools are now `mcp__side-dock-claude__progress` and `mcp__side-dock-claude__step`, and options and saved state live under `side-dock-claude`. Install it as `side-dock-claude@side-dock-claude`; settings kept under the old id are not carried over. The repository is renamed to `side-dock-claude` too.
 
