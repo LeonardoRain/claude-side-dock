@@ -1,116 +1,137 @@
-// The desktop map's richer look: a color per station, a radar sweep, a glow, gradients and a turning HUD.
+// The desktop map's flat look, in the Session panel's own language: its card ground and greys, its system font, its
+// muted solid colors, a color per station, nodes as solid chips that fill in while they work, and round-capped bars.
 // Only a surface that draws the SVG itself asks for it; the terminal's reader knows a smaller SVG and keeps the plain map.
-// Nothing here says anything the plain map does not: it only paints the same things more brightly. Nothing touches the engine.
+// It says nothing the plain map does not: it only paints the same things another way. Nothing here touches the engine.
 import type { StationId } from '../../types'
-import { DARK, LIGHT } from './palette'
 import type { Palette } from './palette'
 import type { Setup } from './setup'
 
 /** A station's color at rest and while it works. */
 export type Pair = readonly [main: string, hot: string]
 
-type Hues = Record<Exclude<StationId, 'memory'>, Pair>
+/** The system font the Session panel's cards are set in. */
+export const FLAT_FONT = `font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif"`
 
-// Around the ring no two neighbours share a family, and none is the alarm's red.
-const HUES_DARK: Hues = {
-  you: ['#6aaeff', '#a8cfff'],
-  model: ['#a98cff', '#cdbbff'],
-  files: ['#f2b766', '#f8d29d'],
-  shell: ['#7fdc8a', '#b4ecbb'],
-  web: ['#4fd6e8', '#9ae9f3'],
-  browser: ['#8b9dff', '#bcc6ff'],
-  agents: ['#f087d6', '#f7bde9'],
-  skills: ['#ffcf5c', '#ffe39e'],
-  hooks: ['#ff9f6b', '#ffc6a6'],
+/** The level colors of the Session panel's bars: under 70 %, from 70 % and from 90 %. */
+const LEVEL = { low: '#8f8cf4', mid: '#D9A23A' } as const
+
+// The Session panel's greys, dark and light, written into the palette's places. `band` is the rings' fill.
+type Neutrals = Pick<Palette, 'ground' | 'raised' | 'line' | 'spoke' | 'bone' | 'ash' | 'dim' | 'trail'> & { band: string }
+const NEUTRAL_DARK: Neutrals = {
+  ground: '#262625', raised: '#2c2c2b', line: '#3a3a37', spoke: '#333331',
+  bone: '#ececec', ash: '#a8a8a4', dim: '#7d7d79', trail: '#8a8a86', band: '#2a2a29',
+}
+const NEUTRAL_LIGHT: Neutrals = {
+  ground: '#f4f3f0', raised: '#ecebe8', line: '#dcdad5', spoke: '#e4e4e1',
+  bone: '#1f1f1f', ash: '#6b6b68', dim: '#9a9a96', trail: '#a5a4a0', band: '#efeeea',
 }
 
-const HUES_LIGHT: Hues = {
-  you: ['#2f6fc4', '#1d4f94'],
-  model: ['#6a4bc9', '#4e339e'],
-  files: ['#a8691d', '#7d4c10'],
-  shell: ['#2f8a3c', '#1f6a2b'],
-  web: ['#16879a', '#0d6676'],
-  browser: ['#4a5bc4', '#34419a'],
-  agents: ['#b13f96', '#8a2c74'],
-  skills: ['#a37b06', '#7a5c03'],
-  hooks: ['#c0571c', '#934013'],
+// The Session panel's palette, stretched to ten: around the ring no two neighbours share a family, and none is the alarm's red.
+const HUES: Record<StationId, string> = {
+  you: '#378ADD',
+  model: '#8f8cf4',
+  memory: '#1D9E75',
+  files: '#BA7517',
+  shell: '#6aa84f',
+  web: '#2BA3B8',
+  browser: '#5B6EE1',
+  agents: '#C75AA8',
+  skills: '#C9932B',
+  hooks: '#D85A30',
+}
+const RED = '#D0453F'
+
+const hex = (v: string): [number, number, number] => [1, 3, 5].map(k => Number.parseInt(v.slice(k, k + 2), 16)) as [number, number, number]
+/** `a` moved a share `t` of the way toward `b`. */
+function mix(a: string, b: string, t: number): string {
+  const [x, y] = [hex(a), hex(b)]
+  return `#${x.map((v, k) => Math.round(v + ((y[k] ?? 0) - v) * t).toString(16).padStart(2, '0')).join('')}`
 }
 
-type Extra = { sweep: string; deep: string; nodeTop: string; nebula: string }
-const EXTRA_DARK: Extra = { sweep: '#5ee6ff', deep: '#141d33', nodeTop: '#1d2433', nebula: '#2b2252' }
-const EXTRA_LIGHT: Extra = { sweep: '#1b8db0', deep: '#fffefb', nodeTop: '#fbfaf6', nebula: '#ece6ff' }
+type Shade = { hot: string; tint: string }
+/** A hue's working shade (lighter on dark, deeper on light) and its chip at rest (the hue sunk into the card). */
+function shadeOf(hue: string, isLight: boolean): Shade {
+  return isLight
+    ? { hot: mix(hue, '#000000', 0.22), tint: mix(hue, NEUTRAL_LIGHT.ground, 0.84) }
+    : { hot: mix(hue, '#ffffff', 0.34), tint: mix(hue, NEUTRAL_DARK.ground, 0.8) }
+}
+
+export type Look = {
+  /** The palette the map is drawn in: the Session panel's greys and colors, under whatever the person set. */
+  c: Palette
+  /** A station's two colors. With an accent the person set, every station but memory wears it, as on the plain map. */
+  hue: (id: StationId) => Pair
+  /** A station's chip at rest. */
+  tint: (id: StationId) => string
+  band: string
+  /** What a glyph is drawn in on a filled chip. */
+  onFill: string
+  /** The context bar's color at a fill. */
+  level: (full: number) => string
+  /** In `auto`, the rules that repaint all of it where the surface is light; otherwise nothing. */
+  head: string
+}
+
+export function lookFor(setup: Setup): Look {
+  const isLight = setup.theme === 'light'
+  const own = setup.colors
+  const n = isLight ? NEUTRAL_LIGHT : NEUTRAL_DARK
+  const { band, ...grey } = n
+  const shade = (id: StationId): Shade => shadeOf(HUES[id], isLight)
+  const accent = shadeOf(LEVEL.low, isLight)
+  const memory = shade('memory')
+  const c: Palette = {
+    ...grey,
+    accent: LEVEL.low,
+    hot: accent.hot,
+    red: RED,
+    mem: HUES.memory,
+    memHot: memory.hot,
+    ...own,
+  }
+  const ownAccent = own.accent !== undefined || own.hot !== undefined
+  const hue = (id: StationId): Pair =>
+    id === 'memory' ? [c.mem, c.memHot] : ownAccent ? [c.accent, c.hot] : [HUES[id], shade(id).hot]
+  const tint = (id: StationId): string => {
+    const [main] = hue(id)
+    return main === HUES[id] ? shade(id).tint : mix(main, c.ground, isLight ? 0.84 : 0.8)
+  }
+  return {
+    c,
+    hue,
+    tint,
+    band,
+    onFill: '#ffffff',
+    level: full => (full >= 90 ? c.red : full >= 70 ? LEVEL.mid : c.accent),
+    head: setup.theme === 'auto' ? lightRules(own) : '',
+  }
+}
+
+/**
+ * For `auto`: the map is drawn dark, and these rules repaint each of its colors where the surface around it is light.
+ * Every color is a plain attribute, so a rule per color reaches all of it. A color the person set stays as it is.
+ */
+function lightRules(own: Partial<Palette>): string {
+  const mine = new Set(Object.values(own))
+  const pairs: [string, string][] = []
+  for (const k of Object.keys(NEUTRAL_DARK) as (keyof Neutrals)[]) pairs.push([NEUTRAL_DARK[k], NEUTRAL_LIGHT[k]])
+  for (const hue of [...Object.values(HUES), LEVEL.low]) {
+    const [d, l] = [shadeOf(hue, false), shadeOf(hue, true)]
+    pairs.push([d.hot, l.hot], [d.tint, l.tint])
+  }
+  const rules = pairs
+    .filter(([d]) => !mine.has(d))
+    .map(([d, l]) => `[fill="${d}"]{fill:${l}}[stroke="${d}"]{stroke:${l}}`)
+    .join('')
+  return `<style>@media (prefers-color-scheme: light){${rules}}</style>`
+}
 
 const n1 = (v: number): string => (Math.round(v * 10) / 10).toString()
 const clock = (ms: number): string => `${(ms / 1000).toFixed(3)}s`
 
-export const GLOW = 'filter="url(#ld-glow)"'
-
-export type Look = {
-  /** A station's two colors. Memory keeps the palette's own; with an accent the person set, every other station wears it, as on the plain map. */
-  hue: (id: StationId) => Pair
-  sweep: string
-  /** The gradients and the glow, and in `auto` the rules that repaint the new colors on a light surface. */
-  head: string
-  /** The ground's fill, or undefined where the person set a ground of their own. */
-  groundFill: string | undefined
-  nodeFill: string
-  coreFill: string
-}
-
-export function lookFor(setup: Setup, c: Palette, cx: number, cy: number): Look {
-  const isLight = setup.theme === 'light'
-  const hues = isLight ? HUES_LIGHT : HUES_DARK
-  const x = isLight ? EXTRA_LIGHT : EXTRA_DARK
-  const own = setup.colors
-  const ownAccent = own.accent !== undefined || own.hot !== undefined
-  const hue = (id: StationId): Pair =>
-    id === 'memory' ? [c.mem, c.memHot] : ownAccent ? [c.accent, c.hot] : hues[id]
-
-  const stops = (list: [number, string, number][]): string =>
-    list.map(([at, color, opacity]) => `<stop offset="${at}" stop-color="${color}" stop-opacity="${opacity}"/>`).join('')
-  const defs =
-    '<defs>' +
-    `<filter id="ld-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` +
-    `<radialGradient id="ld-ground" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="300">${stops([[0, x.deep, 1], [0.62, c.ground, 1], [1, c.ground, 1]])}</radialGradient>` +
-    `<radialGradient id="ld-node" cx=".38" cy=".3" r=".8">${stops([[0, x.nodeTop, 1], [1, c.raised, 1]])}</radialGradient>` +
-    `<radialGradient id="ld-core" cx=".5" cy=".42" r=".65">${stops([[0, x.nebula, 1], [0.75, c.raised, 1], [1, c.raised, 1]])}</radialGradient>` +
-    '</defs>'
-
-  return {
-    hue,
-    sweep: x.sweep,
-    head: defs + (setup.theme === 'auto' ? lightRules(own) : ''),
-    groundFill: own.ground === undefined ? 'url(#ld-ground)' : undefined,
-    nodeFill: own.raised === undefined ? 'url(#ld-node)' : c.raised,
-    coreFill: own.raised === undefined ? 'url(#ld-core)' : c.raised,
-  }
-}
-
-/** For `auto`: the new colors, and the palette's inside gradients, repainted where the surface is light. */
-function lightRules(own: Partial<Palette>): string {
-  const swap = (d: string, l: string): string => `[fill="${d}"]{fill:${l}}[stroke="${d}"]{stroke:${l}}[stop-color="${d}"]{stop-color:${l}}`
-  let rules = ''
-  for (const id of Object.keys(HUES_DARK) as (keyof Hues)[]) {
-    rules += swap(HUES_DARK[id][0], HUES_LIGHT[id][0]) + swap(HUES_DARK[id][1], HUES_LIGHT[id][1])
-  }
-  for (const k of Object.keys(EXTRA_DARK) as (keyof Extra)[]) rules += swap(EXTRA_DARK[k], EXTRA_LIGHT[k])
-  // The palette's own fills and strokes are the plain map's rules; inside a gradient only a stop names them.
-  for (const k of ['ground', 'raised'] as const) {
-    if (own[k] === undefined && !Object.values(own).includes(DARK[k])) rules += `[stop-color="${DARK[k]}"]{stop-color:${LIGHT[k]}}`
-  }
-  return `<style>@media (prefers-color-scheme: light){${rules}}</style>`
-}
-
-/** A gradient along a line, for a spoke or a leg of the route. */
-export function lineGradient(id: string, a: { x: number; y: number }, b: { x: number; y: number }, from: string, to: string, fromOpacity: number): string {
-  return (
-    `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${n1(a.x)}" y1="${n1(a.y)}" x2="${n1(b.x)}" y2="${n1(b.y)}">` +
-    `<stop offset="0" stop-color="${from}" stop-opacity="${fromOpacity}"/><stop offset="1" stop-color="${to}"/></linearGradient>`
-  )
-}
-
-const SWEEP_MS = 5200
-const SWEEP_R = 150
+const SWEEP_MS = 6000
+/** The rings, outermost first: flat bands of the card's own greys, as the Session panel's tracks are. */
+const RINGS: [number, number][] = [[142, 132], [104, 97], [66, 62]]
 
 /** The point at `deg` clockwise from straight up, on a circle of radius `r` around the origin. */
 const polar = (deg: number, r: number): string => {
@@ -119,56 +140,23 @@ const polar = (deg: number, r: number): string => {
 }
 
 /**
- * The radar under the stations: tick marks on an outer dial, a dashed ring that turns slowly, and a beam that sweeps
- * round with a fading wake. All of it sits in a group pressed to the ring's own ellipse. Standing still, only the dial.
+ * Under the stations: the rings as flat bands, and a soft wedge of the accent that turns slowly over them, solid and
+ * unlit, thickening toward its leading edge. Standing still, only the bands.
  */
-export function radar(cx: number, cy: number, squash: number, now: number, isStill: boolean, c: Palette, sweep: string): string {
-  let ticks = ''
-  for (let d = 0; d < 360; d += 5) {
-    const long = d % 30 === 0
-    ticks += `M${polar(d, SWEEP_R + 4)}L${polar(d, SWEEP_R + (long ? 11 : 7))}`
+export function backdrop(cx: number, cy: number, now: number, isStill: boolean, look: Look): string {
+  let out = RINGS.map(([rx, ry], k) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${k % 2 === 0 ? look.band : look.c.ground}"/>`).join('')
+  if (isStill) return out
+  const [rx, ry] = RINGS[0] ?? [142, 132]
+  const span = 56
+  const slices = 10
+  let wedge = ''
+  for (let k = 1; k <= slices; k++) {
+    const a0 = -(span * k * k) / (slices * slices)
+    wedge += `<path d="M0 0L${polar(a0, rx)}A${rx} ${rx} 0 0 1 ${polar(0, rx)}Z" fill="${look.c.accent}" opacity=".022"/>`
   }
-  let out =
-    `<g transform="translate(${cx} ${cy}) scale(1 ${(Math.round(squash * 1000) / 1000).toString()})">` +
-    `<circle r="${SWEEP_R}" fill="none" stroke="${sweep}" stroke-width=".6" opacity=".18"/>` +
-    `<path d="${ticks}" fill="none" stroke="${c.line}" stroke-width="1" stroke-linecap="round" opacity=".9"/>`
-
-  if (!isStill) {
-    // The wake: sectors stacked from the beam backwards, each a little longer and as faint, so the light thickens toward
-    // the beam the way a screen's phosphor fades, with no seam between them.
-    const span = 64
-    const slices = 14
-    let wake = ''
-    for (let k = 1; k <= slices; k++) {
-      const a0 = -(span * k * k) / (slices * slices)
-      wake += `<path d="M0 0L${polar(a0, SWEEP_R)}A${SWEEP_R} ${SWEEP_R} 0 0 1 ${polar(0, SWEEP_R)}Z" fill="${sweep}" opacity=".022"/>`
-    }
-    const turning = (ms: number, reverse = false): string =>
-      `<animateTransform attributeName="transform" type="rotate" from="${reverse ? 360 : 0}" to="${reverse ? 0 : 360}" begin="${clock(-(now % ms))}" dur="${clock(ms)}" repeatCount="indefinite"/>`
-    out +=
-      `<g>${turning(SWEEP_MS)}${wake}` +
-      `<line x1="0" y1="0" x2="0" y2="${-SWEEP_R}" stroke="${sweep}" stroke-width="1.6" stroke-linecap="round" opacity=".85" ${GLOW}/>` +
-      `<circle cx="0" cy="${-SWEEP_R}" r="2.6" fill="${sweep}" ${GLOW}/></g>` +
-      `<g>${turning(90_000, true)}<circle r="${SWEEP_R + 15}" fill="none" stroke="${sweep}" stroke-width="1" stroke-dasharray="2 9" stroke-linecap="round" opacity=".35"/></g>`
-  }
-  return `${out}</g>`
-}
-
-/** Two arcs turning opposite ways around the core, in the model's color and the sweep's. Standing still they rest. */
-export function reactor(cx: number, cy: number, r: number, now: number, isStill: boolean, inner: string, outer: string, anyRunning: boolean): string {
-  const arc = (radius: number, color: string, width: number, dash: string, opacity: string, ms: number, reverse: boolean): string => {
-    const spin = isStill
-      ? ''
-      : `<animateTransform attributeName="transform" type="rotate" from="${reverse ? 360 : 0} ${cx} ${cy}" to="${reverse ? 0 : 360} ${cx} ${cy}" begin="${clock(-(now % ms))}" dur="${clock(ms)}" repeatCount="indefinite"/>`
-    return (
-      `<g>${spin}<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${color}" stroke-width="${width}" pathLength="100" stroke-dasharray="${dash}" stroke-linecap="round" opacity="${opacity}"/></g>`
-    )
-  }
-  const lively = anyRunning ? 1 : 0.7
-  return (
-    `<g ${GLOW}>` +
-    arc(r + 11, inner, 1.6, '22 3 6 19', n1(0.75 * lively), 14_000, false) +
-    arc(r + 15, outer, 1, '3 9', n1(0.55 * lively), 24_000, true) +
-    '</g>'
-  )
+  out +=
+    `<g transform="translate(${cx} ${cy}) scale(1 ${(Math.round((ry / rx) * 1000) / 1000).toString()})"><g>` +
+    `<animateTransform attributeName="transform" type="rotate" from="0" to="360" begin="${clock(-(now % SWEEP_MS))}" dur="${clock(SWEEP_MS)}" repeatCount="indefinite"/>` +
+    `${wedge}</g></g>`
+  return out
 }

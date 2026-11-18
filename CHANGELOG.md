@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.21
+- The desktop work map now matches the Session panel above it: the same card ground and greys, the system font, and the same muted solid colors. Stations are flat color chips that fill in solid while they work; the rings are flat bands, the context reading is a thick round-capped bar in the panel's level colors, and the glow, gradients, dial ticks and turning arcs are gone. A soft wedge still turns slowly over the rings. What the map shows and does is unchanged, and so is the terminal's map.
+
 ## 0.2.20
 - The desktop work map has a richer look: each station has its own color, a radar beam sweeps the rings with a fading wake under a turning dial, two arcs turn around the core, and what flies and what is lit glows. The ground, the nodes and the core are shaded. Light, auto and reduced-motion themes are all painted; a color set in `colors` still wins. The map shows and does exactly what it did before, and the terminal's picture and braille map are unchanged.
 

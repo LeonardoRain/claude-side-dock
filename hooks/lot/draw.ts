@@ -4,7 +4,7 @@ import type { Board, Entry, StationId } from '../../types'
 import { formatTokens, shortModel } from './classify'
 import { DARK, LIGHT, lightRules } from './palette'
 import type { Palette } from './palette'
-import { GLOW, lineGradient, lookFor, radar, reactor } from './rich'
+import { FLAT_FONT, backdrop, lookFor } from './rich'
 import type { Look, Pair } from './rich'
 import { STATIONS } from './setup'
 import type { Setup } from './setup'
@@ -133,13 +133,8 @@ function trail(entries: readonly Entry[], now: number, c: Palette, isStill: bool
     if (from === undefined || to === undefined) continue
     const { path, end } = leg(indexOf(from.station), indexOf(to.station), shift)
     const isHead = k === stops.length - 1
-    // In the rich look a leg runs from the color of the station it left to the color of the one it reached.
-    let stroke = c.trail
-    if (look !== undefined && !ownRoute) {
-      const id = `ld-tr${k}`
-      out += `<defs>${lineGradient(id, place(indexOf(from.station), shift), end, look.hue(from.station)[0], look.hue(to.station)[1], 0.55)}</defs>`
-      stroke = `url(#${id})`
-    }
+    // In the flat look a leg wears the color of the station it reached.
+    const stroke = look !== undefined && !ownRoute ? look.hue(to.station)[0] : c.trail
     const age = now - to.at
     if (age >= TRAIL_HOLD_MS + TRAIL_FADE_MS) continue
     const opacity = n1(0.12 + (0.5 * k) / (stops.length - 1))
@@ -149,10 +144,10 @@ function trail(entries: readonly Entry[], now: number, c: Palette, isStill: bool
     const drawing = isHead && !isStill
       ? ` pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" values="1;0" begin="${clock(to.at - now)}" dur=".5s" fill="freeze"/>`
       : '>'
-    out += `<path d="${path}" fill="none" stroke="${stroke}" stroke-width="${isHead ? 1.5 : 1.1}" stroke-linecap="round" opacity="${opacity}"${drawing}${fade}</path>`
+    out += `<path d="${path}" fill="none" stroke="${stroke}" stroke-width="${look !== undefined ? (isHead ? 2 : 1.5) : isHead ? 1.5 : 1.1}" stroke-linecap="round" opacity="${opacity}"${drawing}${fade}</path>`
     if (isHead) {
       out +=
-        `<circle cx="${n1(end.x)}" cy="${n1(end.y)}" r="2.4" fill="${look !== undefined && !ownRoute ? look.hue(to.station)[1] : c.trail}" opacity="${isStill ? '.85' : '0'}">` +
+        `<circle cx="${n1(end.x)}" cy="${n1(end.y)}" r="2.4" fill="${stroke}" opacity="${isStill ? '.85' : '0'}">` +
         (isStill ? '' : `<animate attributeName="opacity" values="0;.85" begin="${clock(to.at - now + 400)}" dur=".15s" fill="freeze"/>`) +
         `<animate attributeName="opacity" values=".85;0" begin="${clock(TRAIL_HOLD_MS - age)}" dur="${clock(TRAIL_FADE_MS)}" fill="freeze"/></circle>`
     }
@@ -173,9 +168,11 @@ type Scene = {
   /** A station's colors: the plain map's two, or one pair per station in the rich look. */
   hue: (id: StationId) => Pair
   look: Look | undefined
+  /** The words' typeface: the plain map's monospace, or the Session panel's system font in the flat look. */
+  font: string
 }
 
-function station(s: (typeof STATIONS)[number], i: number, { entries, board, now, c, names, isStill, shift, spent, hue, look }: Scene): { under: string; over: string } {
+function station(s: (typeof STATIONS)[number], i: number, { entries, board, now, c, names, isStill, shift, spent, hue, look, font }: Scene): { under: string; over: string } {
   const p = place(i, shift)
   const x = n1(p.x)
   const y = n1(p.y)
@@ -217,7 +214,6 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
       `<animate attributeName="stroke-dashoffset" values="1;0" begin="${clock(-(isOnce ? Math.min(elapsed, lapMs) : elapsed % lapMs))}" dur="${clock(lapMs)}" ${isOnce ? 'fill="freeze"' : 'repeatCount="indefinite"'}/></circle>`
     under += hand(NODE + 4, 2.2, 60_000, false) + hand(NODE + 8, 1.2, 600_000, true)
   }
-  if (look !== undefined && under !== '') under = `<g ${GLOW}>${under}</g>`
 
   // A lit node wears a ring of its color while something runs; afterwards the ring fades back to the resting line.
   const lit = `<circle cx="${x}" cy="${y}" r="${NODE}" fill="none" stroke="${color}" stroke-width="1.2"`
@@ -227,17 +223,26 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
       : isLit || isAlarm
         ? `${lit} opacity="0"><animate attributeName="opacity" values="1;0" begin="${clock(-fade)}" dur="${clock(span)}" fill="freeze"/></circle>`
         : ''
-  const glyphColor = isAlarm ? c.red : isLit ? hot : s.id === 'memory' && count > 0 ? main : look !== undefined ? main : c.ash
-  // In the rich look a resting glyph wears its station's color, dimmed, so a lit one still stands out.
-  const glyphDim = look !== undefined && !isAlarm && !isLit && !(s.id === 'memory' && count > 0) ? ' opacity=".62"' : ''
-  // And a resting node a faint ring of it.
-  const tint = look !== undefined && !isLit && !isAlarm ? `<circle cx="${x}" cy="${y}" r="${NODE}" fill="none" stroke="${main}" stroke-width="1.2" opacity=".32"/>` : ''
+  const glyphColor = isAlarm ? c.red : isLit ? hot : s.id === 'memory' && count > 0 ? main : c.ash
+  const glyph = (stroke: string): string =>
+    `<path transform="translate(${x} ${y})" d="${s.icon}" fill="none" stroke="${stroke}" stroke-width="${look !== undefined ? 1.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"/>`
   // The words stand on a rim of the ground's own color, so a line that passes behind them never strikes them through.
   const rim = `paint-order="stroke" stroke="${c.ground}" stroke-width="3.5" stroke-linejoin="round"`
-  let over =
-    `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${look?.nodeFill ?? c.raised}" stroke="${c.line}" stroke-width="1.5"/>${tint}${cooling}` +
-    `<path transform="translate(${x} ${y})" d="${s.icon}" fill="none" stroke="${glyphColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"${glyphDim}/>` +
-    `<text x="${x}" y="${n1(p.y + NODE + 16)}" text-anchor="middle" ${FONT} font-size="12.5" ${rim} fill="${isLit || isAlarm ? c.bone : c.ash}">${names[s.id]}</text>`
+  let over = ''
+  if (look === undefined) {
+    over += `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${c.raised}" stroke="${c.line}" stroke-width="1.5"/>${cooling}${glyph(glyphColor)}`
+  } else {
+    // A flat chip of the station's color sunk into the card; while it works the chip fills in solid, and cools back after.
+    const solid = `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${color}"/>${glyph(look.onFill)}`
+    const filled =
+      running.length > 0 && !isAlarm
+        ? `<g>${solid}</g>`
+        : isLit || isAlarm
+          ? `<g opacity="0"><animate attributeName="opacity" values="1;0" begin="${clock(-fade)}" dur="${clock(span)}" fill="freeze"/>${solid}</g>`
+          : ''
+    over += `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${look.tint(s.id)}"/>${glyph(main)}${filled}`
+  }
+  over += `<text x="${x}" y="${n1(p.y + NODE + 16)}" text-anchor="middle" ${font} font-size="12.5"${look !== undefined ? ' font-weight="500"' : ''} ${rim} fill="${isLit || isAlarm ? c.bone : c.ash}">${names[s.id]}</text>`
 
   if (count > 0) {
     // Memory keeps two counts: what was asked for, and what a hook brought down unasked.
@@ -248,21 +253,24 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
     // With `contextCost`, after the counts, about how much the station's calls added to the context: in the counts' own colour.
     const tokens = spent?.[s.id] ?? 0
     const cost = tokens > 0 ? ` · ${formatTokens(tokens)}` : ''
-    over += `<text x="${x}" y="${n1(p.y + NODE + 30)}" text-anchor="middle" ${FONT} font-size="10.5" ${rim} fill="${c.dim}">${figures}${cost}</text>`
+    over += `<text x="${x}" y="${n1(p.y + NODE + 30)}" text-anchor="middle" ${font} font-size="10.5"${look !== undefined ? ' font-variant-numeric="tabular-nums"' : ''} ${rim} fill="${c.dim}">${figures}${cost}</text>`
   }
 
   // Top right: how many run at once. Top left: what went wrong since the last message, until the next one.
   const corner = NODE * 0.74
   if (running.length > 1) {
     over +=
-      `<circle cx="${n1(p.x + corner)}" cy="${n1(p.y - corner)}" r="8" fill="${c.raised}" stroke="${color}" stroke-width="1"/>` +
-      `<text x="${n1(p.x + corner)}" y="${n1(p.y - corner + 3)}" text-anchor="middle" ${FONT} font-size="8.5" fill="${hot}">×${running.length}</text>`
+      (look !== undefined
+        ? `<circle cx="${n1(p.x + corner)}" cy="${n1(p.y - corner)}" r="8" fill="${c.ground}"/><circle cx="${n1(p.x + corner)}" cy="${n1(p.y - corner)}" r="6.8" fill="${color}"/>` +
+          `<text x="${n1(p.x + corner)}" y="${n1(p.y - corner + 3)}" text-anchor="middle" ${font} font-size="8.5" font-weight="600" fill="${look.onFill}">×${running.length}</text>`
+        : `<circle cx="${n1(p.x + corner)}" cy="${n1(p.y - corner)}" r="8" fill="${c.raised}" stroke="${color}" stroke-width="1"/>` +
+          `<text x="${n1(p.x + corner)}" y="${n1(p.y - corner + 3)}" text-anchor="middle" ${font} font-size="8.5" fill="${hot}">×${running.length}</text>`)
   }
   const faults = board.faults?.[s.id] ?? 0
   if (faults > 0) {
     over +=
       `<circle cx="${n1(p.x - corner)}" cy="${n1(p.y - corner)}" r="7.5" fill="${c.red}"/>` +
-      `<text x="${n1(p.x - corner)}" y="${n1(p.y - corner + 3.1)}" text-anchor="middle" ${FONT} font-size="9" font-weight="700" fill="${c.ground}">${faults > 99 ? '99+' : faults}</text>`
+      `<text x="${n1(p.x - corner)}" y="${n1(p.y - corner + 3.1)}" text-anchor="middle" ${font} font-size="9" font-weight="700" fill="${look?.onFill ?? c.ground}">${faults > 99 ? '99+' : faults}</text>`
   }
   return { under, over }
 }
@@ -274,8 +282,9 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
  * (rich.ts): the same map, more color and motion, in SVG the terminal's reader does not know, so only for an `Svg`.
  */
 export function drawMap(board: Board, now: number, setup: Setup, withSpent = false, isRich = false): string {
-  const c: Palette = { ...(setup.theme === 'light' ? LIGHT : DARK), ...setup.colors }
-  const look = isRich ? lookFor(setup, c, CX, CY) : undefined
+  const look = isRich ? lookFor(setup) : undefined
+  const c: Palette = look?.c ?? { ...(setup.theme === 'light' ? LIGHT : DARK), ...setup.colors }
+  const font = look !== undefined ? FLAT_FONT : FONT
   // How many places the ring is turned. The stations keep their order, so the far side of the person is always the network.
   const shift = setup.layout === 'you-bottom' ? STATIONS.length / 2 : 0
   const core: Point = { x: CX, y: CY }
@@ -293,12 +302,14 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
   const tone = (e: Entry): Pair => hue(e.station)
 
   // Without its ground the map keeps the rim around its words, in the ground's color: a faint halo on a surface of another shade.
-  let body = setup.background === 'transparent' ? '' : `<rect width="${W}" height="${H}" rx="12" fill="${look?.groundFill ?? c.ground}"/>`
-  if (look !== undefined) body += radar(CX, CY, RY / RX, now, isStill, c, look.sweep)
+  let body = setup.background === 'transparent' ? '' : `<rect width="${W}" height="${H}" rx="${look !== undefined ? 10 : 12}" fill="${c.ground}"/>`
 
-  // Contours around the core.
-  for (const [rx, ry] of [[66, 62], [104, 97], [142, 132]]) {
-    body += `<ellipse cx="${CX}" cy="${CY}" rx="${rx}" ry="${ry}" fill="none" stroke="${c.line}" stroke-width=".8" opacity=".7" stroke-dasharray="1.5 5" stroke-linecap="round"/>`
+  // Contours around the core: dotted lines, or in the flat look solid bands under a slowly turning wedge.
+  if (look !== undefined) body += backdrop(CX, CY, now, isStill, look)
+  else {
+    for (const [rx, ry] of [[66, 62], [104, 97], [142, 132]]) {
+      body += `<ellipse cx="${CX}" cy="${CY}" rx="${rx}" ry="${ry}" fill="none" stroke="${c.line}" stroke-width=".8" opacity=".7" stroke-dasharray="1.5 5" stroke-linecap="round"/>`
+    }
   }
 
   // Spokes first, then whatever flies along them, then the nodes on top.
@@ -310,13 +321,10 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
     const worn = Math.min(1, Math.log2(1 + (board.counts[s.id] ?? 0)) / 7)
     const line = `<line x1="${n1(a.x)}" y1="${n1(a.y)}" x2="${n1(b.x)}" y2="${n1(b.y)}" stroke-width="${n1(1.4 + 2.4 * worn)}" stroke-linecap="round"`
     body += `${line} stroke="${c.spoke}"/>`
-    if (worn > 0 && look !== undefined) {
-      // In the rich look a worn spoke glows from the core's side out into its station's color.
-      body += `<defs>${lineGradient(`ld-sp${i}`, a, b, look.sweep, hue(s.id)[0], 0.2)}</defs>${line} stroke="url(#ld-sp${i})" opacity="${n1(0.25 + worn * 0.6)}"/>`
-    } else if (worn > 0) body += `${line} stroke="${s.id === 'memory' ? c.mem : c.accent}" opacity="${n1(worn * 0.55)}"/>`
+    if (worn > 0) body += `${line} stroke="${hue(s.id)[0]}" opacity="${n1(worn * (look !== undefined ? 0.7 : 0.55))}"/>`
   })
 
-  const scene: Scene = { entries: recent, board, now, c, names: setup.t.stations, isStill, shift, spent: withSpent && setup.contextCost ? board.spent : undefined, hue, look }
+  const scene: Scene = { entries: recent, board, now, c, names: setup.t.stations, isStill, shift, spent: withSpent && setup.contextCost ? board.spent : undefined, hue, look, font }
   const drawn = STATIONS.map((s, i) => station(s, i, scene))
   body += drawn.map(d => d.under).join('')
   body += trail(recent, now, c, isStill, shift, look, setup.colors.trail !== undefined)
@@ -333,8 +341,6 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
     return (peers.indexOf(e) - (peers.length - 1) / 2) * 5
   }
 
-  // In the rich look everything that flies glows.
-  if (look !== undefined) body += `<g ${GLOW}>`
   for (const e of beams) {
     const [a, b] = ends(e)
     body += beam(a, b, isBad(e) ? c.red : tone(e)[0], now - e.startedAt, e.from === 'inbound')
@@ -353,13 +359,12 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
     const [a, b] = aside(...ends(e), lane(returns, e))
     body += pulse(b, a, e.status === 'ok' ? c.ash : c.red, now - (e.endedAt as number), 2.6)
   }
-  if (look !== undefined) body += '</g>'
 
   body += drawn.map(d => d.over).join('')
 
   // Each subagent still at work circles the agents station.
   const crew = (board.agents ?? []).slice(0, 6)
-  const dot = look !== undefined ? `fill="${hue('agents')[1]}" ${GLOW}` : `fill="${c.hot}"`
+  const dot = `fill="${look !== undefined ? hue('agents')[0] : c.hot}"`
   crew.forEach((_, k) => {
     const lap = 7000
     const spin = `${n1(agentsAt.x)} ${n1(agentsAt.y)}`
@@ -385,25 +390,37 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
       : `<circle cx="${CX}" cy="${CY}" r="${CORE + 6}" fill="${c.accent}" opacity=".08">` +
         `<animate attributeName="r" values="${CORE + 3};${CORE + 13};${CORE + 3}" ${breath}/>` +
         `<animate attributeName="opacity" values=".05;${anyRunning ? '.24' : '.12'};.05" ${breath}/></circle>`) +
-    (look !== undefined ? reactor(CX, CY, CORE, now, isStill, hue('model')[0], look.sweep, anyRunning) : '') +
-    `<circle cx="${CX}" cy="${CY}" r="${CORE}" fill="${look?.coreFill ?? c.raised}" stroke="${anyRunning ? c.accent : c.line}" stroke-width="1.5"/>` +
-    `<circle cx="${CX}" cy="${CY}" r="${CORE - 5}" fill="none" stroke="${c.line}" stroke-width=".7" opacity=".6"/>`
+    (look !== undefined
+      ? `<circle cx="${CX}" cy="${CY}" r="${CORE + 2}" fill="${c.raised}"/>`
+      : `<circle cx="${CX}" cy="${CY}" r="${CORE}" fill="${c.raised}" stroke="${anyRunning ? c.accent : c.line}" stroke-width="1.5"/>` +
+        `<circle cx="${CX}" cy="${CY}" r="${CORE - 5}" fill="none" stroke="${c.line}" stroke-width=".7" opacity=".6"/>`)
 
   // The context window as a ring around the core: it fills as the session goes and empties at a compaction.
   if (board.context !== undefined) {
     const full = Math.max(0, Math.min(100, Math.round(board.context)))
-    const ring = `cx="${CX}" cy="${CY}" r="${CORE + 5}" fill="none" stroke-width="2.2"`
-    body +=
-      `<circle ${ring} stroke="${c.line}" opacity=".7"/>` +
-      `<circle ${ring} stroke="${full >= 90 ? c.red : full >= 70 ? c.accent : look?.sweep ?? c.ash}" pathLength="100" stroke-dasharray="${full} 100" transform="rotate(-90 ${CX} ${CY})"/>` +
-      `<text x="${CX}" y="${CY - 19}" text-anchor="middle" ${FONT} font-size="9" fill="${c.ash}">${full}%</text>`
+    if (look !== undefined) {
+      // In the flat look, a thick round-capped bar like the Session panel's, in its level colors.
+      const ring = `cx="${CX}" cy="${CY}" r="${CORE + 7}" fill="none" stroke-width="5"`
+      body +=
+        `<circle ${ring} stroke="${c.spoke}"/>` +
+        (full > 0
+          ? `<circle ${ring} stroke="${look.level(full)}" stroke-linecap="round" pathLength="100" stroke-dasharray="${Math.max(0.5, full - 2.5)} 100" transform="rotate(-88.5 ${CX} ${CY})"/>`
+          : '') +
+        `<text x="${CX}" y="${CY - 19}" text-anchor="middle" ${font} font-size="9.5" font-variant-numeric="tabular-nums" fill="${c.ash}">${full}%</text>`
+    } else {
+      const ring = `cx="${CX}" cy="${CY}" r="${CORE + 5}" fill="none" stroke-width="2.2"`
+      body +=
+        `<circle ${ring} stroke="${c.line}" opacity=".7"/>` +
+        `<circle ${ring} stroke="${full >= 90 ? c.red : full >= 70 ? c.accent : c.ash}" pathLength="100" stroke-dasharray="${full} 100" transform="rotate(-90 ${CX} ${CY})"/>` +
+        `<text x="${CX}" y="${CY - 19}" text-anchor="middle" ${font} font-size="9" fill="${c.ash}">${full}%</text>`
+    }
   }
 
   const switchAge = board.switchedAt === undefined ? Infinity : now - board.switchedAt
   const isSwitching = switchAge >= 0 && switchAge < SWITCH_MS
-  body += `<text x="${CX}" y="${CY + (board.model === undefined ? 6 : 1)}" text-anchor="middle" ${FONT} font-size="${n1(coreSize)}" letter-spacing="${n1(coreSize * 0.147)}" fill="${c.bone}">${escapeXml(setup.core)}</text>`
+  body += `<text x="${CX}" y="${CY + (board.model === undefined ? 6 : 1)}" text-anchor="middle" ${font} font-size="${n1(coreSize)}"${look !== undefined ? ' font-weight="600"' : ''} letter-spacing="${n1(coreSize * (look !== undefined ? 0.1 : 0.147))}" fill="${c.bone}">${escapeXml(setup.core)}</text>`
   if (board.model !== undefined) {
-    body += `<text x="${CX}" y="${CY + 17}" text-anchor="middle" ${FONT} font-size="9" fill="${isSwitching ? c.hot : c.ash}">${escapeXml(shortModel(board.model))}</text>`
+    body += `<text x="${CX}" y="${CY + 17}" text-anchor="middle" ${font} font-size="9" fill="${isSwitching ? c.hot : c.ash}">${escapeXml(shortModel(board.model))}</text>`
   }
 
   // A changed model rings at the core and at its station for a few seconds.
@@ -413,7 +430,7 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
     for (const [p, r] of [[core, CORE], [model, NODE]] as const) {
       const ringing = `begin="${clock(-(switchAge % 1600))}" dur="1.6s" repeatCount="${laps}" fill="freeze"`
       body +=
-        `<circle cx="${n1(p.x)}" cy="${n1(p.y)}" r="${r}" fill="none" stroke="${look !== undefined ? hue('model')[1] : c.bone}" stroke-width="1.4" opacity="0"${look !== undefined ? ` ${GLOW}` : ''}>` +
+        `<circle cx="${n1(p.x)}" cy="${n1(p.y)}" r="${r}" fill="none" stroke="${look !== undefined ? hue('model')[0] : c.bone}" stroke-width="1.4" opacity="0">` +
         `<animate attributeName="r" values="${r};${r + 26}" ${ringing}/>` +
         `<animate attributeName="opacity" values=".7;0" ${ringing}/></circle>`
     }
@@ -424,13 +441,13 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
   if (done !== undefined && now - done.startedAt < DONE_MS && !isStill) {
     const leaving = `begin="${clock(done.startedAt - now)}" dur="${clock(DONE_MS)}" fill="freeze"`
     body +=
-      `<circle cx="${CX}" cy="${CY}" r="${CORE}" fill="none" stroke="${look?.sweep ?? c.bone}" stroke-width="1.6" opacity="0"${look !== undefined ? ` ${GLOW}` : ''}>` +
+      `<circle cx="${CX}" cy="${CY}" r="${CORE}" fill="none" stroke="${look !== undefined ? c.accent : c.bone}" stroke-width="1.6" opacity="0">` +
       `<animate attributeName="r" values="${CORE};${CORE + 38}" ${leaving}/>` +
       `<animate attributeName="opacity" values=".6;0" ${leaving}/></circle>`
   }
 
   // Twice the viewBox, so the picture fills whatever room the pane gives it.
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * 2}" height="${H * 2}">${setup.theme === 'auto' ? lightRules(setup.colors) : ''}${look?.head ?? ''}${body}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * 2}" height="${H * 2}">${look !== undefined ? look.head : setup.theme === 'auto' ? lightRules(setup.colors) : ''}${body}</svg>`
 }
 
 function escapeXml(text: string): string {
