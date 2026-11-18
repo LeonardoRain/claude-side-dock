@@ -218,9 +218,9 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
   // The words stand on a rim of the ground's own color, so a line that passes behind them never strikes them through.
   const rim = `paint-order="stroke" stroke="${c.ground}" stroke-width="3.5" stroke-linejoin="round"`
   let over =
-    `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${c.raised}" stroke="${c.line}" stroke-width="1.2"/>${cooling}` +
-    `<path transform="translate(${x} ${y})" d="${s.icon}" fill="none" stroke="${glyphColor}" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>` +
-    `<text x="${x}" y="${n1(p.y + NODE + 15)}" text-anchor="middle" ${FONT} font-size="11.5" ${rim} fill="${isLit || isAlarm ? c.bone : c.ash}">${names[s.id]}</text>`
+    `<circle cx="${x}" cy="${y}" r="${NODE}" fill="${c.raised}" stroke="${c.line}" stroke-width="1.5"/>${cooling}` +
+    `<path transform="translate(${x} ${y})" d="${s.icon}" fill="none" stroke="${glyphColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<text x="${x}" y="${n1(p.y + NODE + 16)}" text-anchor="middle" ${FONT} font-size="12.5" ${rim} fill="${isLit || isAlarm ? c.bone : c.ash}">${names[s.id]}</text>`
 
   if (count > 0) {
     // Memory keeps two counts: what was asked for, and what a hook brought down unasked.
@@ -231,7 +231,7 @@ function station(s: (typeof STATIONS)[number], i: number, { entries, board, now,
     // With `contextCost`, after the counts, about how much the station's calls added to the context: in the counts' own colour.
     const tokens = spent?.[s.id] ?? 0
     const cost = tokens > 0 ? ` · ${formatTokens(tokens)}` : ''
-    over += `<text x="${x}" y="${n1(p.y + NODE + 28)}" text-anchor="middle" ${FONT} font-size="9.5" ${rim} fill="${c.dim}">${figures}${cost}</text>`
+    over += `<text x="${x}" y="${n1(p.y + NODE + 30)}" text-anchor="middle" ${FONT} font-size="10.5" ${rim} fill="${c.dim}">${figures}${cost}</text>`
   }
 
   // Top right: how many run at once. Top left: what went wrong since the last message, until the next one.
@@ -277,7 +277,7 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
 
   // Contours around the core.
   for (const [rx, ry] of [[66, 62], [104, 97], [142, 132]]) {
-    body += `<ellipse cx="${CX}" cy="${CY}" rx="${rx}" ry="${ry}" fill="none" stroke="${c.line}" stroke-width=".7" opacity=".45" stroke-dasharray="2 5"/>`
+    body += `<ellipse cx="${CX}" cy="${CY}" rx="${rx}" ry="${ry}" fill="none" stroke="${c.line}" stroke-width=".8" opacity=".7" stroke-dasharray="1.5 5" stroke-linecap="round"/>`
   }
 
   // Spokes first, then whatever flies along them, then the nodes on top.
@@ -287,7 +287,7 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
     const a = edge(core, p, HUB)
     const b = edge(p, core, NODE)
     const worn = Math.min(1, Math.log2(1 + (board.counts[s.id] ?? 0)) / 7)
-    const line = `<line x1="${n1(a.x)}" y1="${n1(a.y)}" x2="${n1(b.x)}" y2="${n1(b.y)}" stroke-width="${n1(1 + 2.6 * worn)}" stroke-linecap="round"`
+    const line = `<line x1="${n1(a.x)}" y1="${n1(a.y)}" x2="${n1(b.x)}" y2="${n1(b.y)}" stroke-width="${n1(1.4 + 2.4 * worn)}" stroke-linecap="round"`
     body += `${line} stroke="${c.spoke}"/>`
     if (worn > 0) body += `${line} stroke="${s.id === 'memory' ? c.mem : c.accent}" opacity="${n1(worn * 0.55)}"/>`
   })
@@ -357,7 +357,8 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
       : `<circle cx="${CX}" cy="${CY}" r="${CORE + 6}" fill="${c.accent}" opacity=".08">` +
         `<animate attributeName="r" values="${CORE + 3};${CORE + 13};${CORE + 3}" ${breath}/>` +
         `<animate attributeName="opacity" values=".05;${anyRunning ? '.24' : '.12'};.05" ${breath}/></circle>`) +
-    `<circle cx="${CX}" cy="${CY}" r="${CORE}" fill="${c.raised}" stroke="${anyRunning ? c.accent : c.line}" stroke-width="1.3"/>`
+    `<circle cx="${CX}" cy="${CY}" r="${CORE}" fill="${c.raised}" stroke="${anyRunning ? c.accent : c.line}" stroke-width="1.5"/>` +
+    `<circle cx="${CX}" cy="${CY}" r="${CORE - 5}" fill="none" stroke="${c.line}" stroke-width=".7" opacity=".6"/>`
 
   // The context window as a ring around the core: it fills as the session goes and empties at a compaction.
   if (board.context !== undefined) {
@@ -366,7 +367,7 @@ export function drawMap(board: Board, now: number, setup: Setup, withSpent = fal
     body +=
       `<circle ${ring} stroke="${c.line}" opacity=".7"/>` +
       `<circle ${ring} stroke="${full >= 90 ? c.red : full >= 70 ? c.accent : c.ash}" pathLength="100" stroke-dasharray="${full} 100" transform="rotate(-90 ${CX} ${CY})"/>` +
-      `<text x="${CX}" y="${CY - 19}" text-anchor="middle" ${FONT} font-size="8" fill="${c.dim}">${full}%</text>`
+      `<text x="${CX}" y="${CY - 19}" text-anchor="middle" ${FONT} font-size="9" fill="${c.ash}">${full}%</text>`
   }
 
   const switchAge = board.switchedAt === undefined ? Infinity : now - board.switchedAt

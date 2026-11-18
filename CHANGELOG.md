@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.14
+- The band is counted at 8.9 px per column and the Pixel bar's right-hand time slot is narrower (92 → 76 px), so the bar's track and the rows run closer to the right edge.
+
+## 0.2.14
+- The work map is easier to read: the spokes, the contour rings and the node rims are clearer on the dark palette, the glyphs and the station names are a little bigger, and the core has a hairline ring inside. Nothing else about it changed.
+
+## 0.2.13
+- The stats row and the Pixel bar under the crab now run to the right edge of the band, under the crew's fan, instead of stopping about a tenth short: the band is counted at 8.5 px per column, and the rows' boxes take the full width.
+
 ## 0.2.12
 - With the language set to Chinese (`agentsLanguage` zh, or auto resolving to zh), the line above the crab ("Claude is thinking" and the rest) and the "Watch crew" button are in Chinese too.
 

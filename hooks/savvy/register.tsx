@@ -2145,6 +2145,8 @@ export async function savvy_ui_render_Pane_PANE($: EngineInterface, e: Any, _nex
 }
 
 // The band: the session row in every session, and the flow's progress under it while one runs.
+const BAND_PX_PER_COL = 8.9
+
 export async function savvy_ui_render_AbovePrompt($: EngineInterface, e: Any, next: Any): Promise<Any> {
   if (e.props.hasSurvey) return next(e)
 
@@ -2169,16 +2171,16 @@ export async function savvy_ui_render_AbovePrompt($: EngineInterface, e: Any, ne
 
   if (e.surface === 'desktop' && 'Svg' in ui) {
     const { Svg } = ui
-    // The band is about 8 CSS px per reported column, less 8 of padding (measured
-    // on the desktop). The flow row has no button and takes the whole width, bar
+    // The band is about 8.9 CSS px per reported column, less 8 of padding (measured
+    // on the desktop; at 8 the rows stopped short of the right edge, under the crew's fan). The flow row has no button and takes the whole width, bar
     // and all; the stats row keeps room for Details, pushed to the far end so it
     // lines up with the flow row's end. No floor above the slot: a row wider would wrap.
     const cols = e.props.bodyColumns || 100
-    const flowW = Math.max(180, Math.min(1600, cols * 8 - 16))
-    const stats = statsSvg(Math.max(180, Math.min(1600, cols * 8 - 120)), segs, isBusy)
+    const flowW = Math.max(180, Math.min(1600, Math.round(cols * BAND_PX_PER_COL) - 16))
+    const stats = statsSvg(Math.max(180, Math.min(1600, Math.round(cols * BAND_PX_PER_COL) - 120)), segs, isBusy)
     return (
-      <Box flexDirection="column">
-        <Box key="savvy-stats" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+      <Box flexDirection="column" width="100%">
+        <Box key="savvy-stats" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1} width="100%">
           <Svg source={stats.source} alt={statsAlt} width={stats.width} height={H} />
           {details}
         </Box>

@@ -119,9 +119,9 @@ export const register: Register = (on, options) => {
     ])
     if (crab === null && row === null) return next(e)
     return (
-      <Box flexDirection="column">
-        {crab === null ? [] : [<Box key="dock-crab">{crab as never}</Box>]}
-        {row === null ? [] : [<Box key="dock-savvy">{row as never}</Box>]}
+      <Box flexDirection="column" width="100%">
+        {crab === null ? [] : [<Box key="dock-crab" width="100%">{crab as never}</Box>]}
+        {row === null ? [] : [<Box key="dock-savvy" width="100%">{row as never}</Box>]}
       </Box>
     )
   })

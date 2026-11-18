@@ -20,8 +20,8 @@ export type Palette = {
 export const DARK: Palette = {
   ground: '#0a0c11',
   raised: '#12151c',
-  line: '#272c36',
-  spoke: '#1a1e27',
+  line: '#343b48',
+  spoke: '#2a303b',
   bone: '#ebe6dc',
   ash: '#9ba1ab',
   dim: '#6b7280',

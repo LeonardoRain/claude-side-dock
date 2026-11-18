@@ -35,7 +35,7 @@ import {
 import { STYLE, tierColor, trunc, shortModel } from './theme'
 
 const TRACK_H = 22
-const RIGHT_W = 92
+const RIGHT_W = 76
 const PAD = 3
 const ASK_DELAY_MS = 600
 const MAX_ROWS = 4
