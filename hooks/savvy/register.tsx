@@ -902,6 +902,9 @@ const TOKEN_COLORS = { input: '#378ADD', output: ACCENT, cacheRead: '#1D9E75', c
 
 const tokensHeight = (t: Totals): number => (sumSplit(t.split) ? 120 : 70)
 
+// Where the info icon sits on the tokens card: just right of the title, bold text being a little wider than measured.
+const tokenInfoX = (title: string): number => Math.round(PAD + textWidth(title, 11.5) * 1.1 + 14)
+
 const tokensSvg = (W: number, t: Totals): string => {
   const s = tr()
   const inner = W - PAD * 2
@@ -915,11 +918,15 @@ const tokensSvg = (W: number, t: Totals): string => {
   ]
   const prompt = t.split.input + t.split.cacheRead + t.split.cacheWrite
   const hit = prompt ? (t.split.cacheRead / prompt) * 100 : 0
+  const tip = xml(s.estimate.replace(/^≈\s*/, ''))
+  const ix = tokenInfoX(s.tokenSplit)
+  const info = `<g><title>${tip}</title><circle cx="${ix}" cy="18" r="6.5" fill="none" stroke="#9a9893" stroke-width="1"/><circle cx="${ix}" cy="15.2" r=".9" fill="#9a9893"/><rect x="${ix - 0.5}" y="17" width="1" height="4.2" rx=".5" fill="#9a9893"/><circle cx="${ix}" cy="18" r="10" fill="transparent"/></g>`
   return card(
     W,
     tokensHeight(t),
     s.tokenSplit,
     fmtTokens(total),
+    info +
     `${stackBar(PAD, 32, inner, 10, kinds.map(k => ({ w: Math.round((inner * k.v) / total), color: k.color })))}
 ${legend(W, 66, kinds.map(k => ({ name: k.name, value: `${fmtTokens(k.v)} · ${fmtShare((k.v / total) * 100)}`, color: k.color })))}
 ${txt(PAD, 108, fitText(`${s.cacheHit} ${fmtShare(hit)} · ${t.steps} ${s.requests}`, 11, inner), { size: 11, cls: 'm', num: true })}`,
@@ -1390,13 +1397,30 @@ const meterFrom = (u: {
   context: { tokens?: number; window: number; percent?: number }
   rateLimits: readonly { kind: string; percentUsed: number; resetsAt?: string }[]
   cost?: { usd: number }
-}): Partial<Meter> => ({
-  contextTokens: u.context.tokens,
-  contextWindow: u.context.window,
-  contextPercent: u.context.percent,
-  rateLimits: rateWindows(u.rateLimits),
-  ...(u.cost ? { costUsd: u.cost.usd } : {}),
-})
+}): Partial<Meter> => {
+  const { tokens, window: size, percent } = u.context
+  // An event that leaves a figure out must not wipe the one already read: only what it carries is taken, and a missing
+  // percent is worked out from the tokens when the window is known.
+  const pct = typeof percent === 'number' ? percent : typeof tokens === 'number' && size > 0 ? (tokens / size) * 100 : undefined
+  return {
+    ...(typeof tokens === 'number' ? { contextTokens: tokens } : {}),
+    ...(size > 0 ? { contextWindow: size } : {}),
+    ...(pct !== undefined ? { contextPercent: Math.min(100, pct) } : {}),
+    rateLimits: rateWindows(u.rateLimits),
+    ...(u.cost ? { costUsd: u.cost.usd } : {}),
+  }
+}
+
+// Reads the engine's figures now, as the Lot Map does after each step; costs nothing.
+async function syncMeter($: EngineInterface): Promise<void> {
+  try {
+    const u = await $.session.usage()
+    const mt = await update($, meter, m => ({ ...m, ...meterFrom(u), startedAt: u.startedAt }))
+    await publish($, { meter: mt }, false)
+  } catch {
+    // No session figures on this host.
+  }
+}
 
 // /context's categories, estimated locally (`summary` sends no request); for the pane only.
 async function refreshBreakdown($: EngineInterface): Promise<void> {
@@ -1742,6 +1766,7 @@ export async function savvy_agent_spawn($: EngineInterface, e: Any, next: Any): 
 // Each model request of a subagent: live context, tokens and cost.
 export async function* savvy_turn_step($: EngineInterface, e: Any, next: Any): AsyncGenerator<Any, Any, Any> {
   const result = yield* next(e)
+  if (!e.agentId) void syncMeter($)
   const agentId = e.agentId
   const usage = result.usage
   if (!usage) return result
@@ -1986,12 +2011,21 @@ export async function savvy_ui_render_Pane_PANE($: EngineInterface, e: Any, _nex
           <Svg source={limitsSvg(W, mt.rateLimits, at)} alt={`${s.limits}: ${limitsAlt}`} width={W} height={limitsHeight(mt.rateLimits.length)} />
         )}
         <Svg source={contextSvg(W, mt)} alt={`${s.ctxWindow}: ${ctxAlt}`} width={W} height={contextHeight(mt)} />
-        <Svg source={tokensSvg(W, t)} alt={`${s.tokenSplit}: ${fmtTokens(t.tokens)}`} width={W} height={tokensHeight(t)} />
+        <Box key="tokens-card" position="relative">
+          <Svg source={tokensSvg(W, t)} alt={`${s.tokenSplit}: ${fmtTokens(t.tokens)}. ${s.estimate}`} width={W} height={tokensHeight(t)} />
+          {sumSplit(t.split) > 0 && (
+            <Box key="tokens-info" position="absolute" top={0} left={Math.max(0, Math.round((tokenInfoX(s.tokenSplit) - 10) / 8.5))} width={3} height={2}>
+              <Text> </Text>
+              <Box position="absolute" top={2} left={0} display="none" hover={{ display: 'flex' }} borderStyle="round" backgroundColor="#252423" paddingX={1} width={Math.max(16, Math.min(40, Math.floor(W / 8.5) - 4))}>
+                <Text>{s.estimate.replace(/^≈\s*/, '')}</Text>
+              </Box>
+            </Box>
+          )}
+        </Box>
         {models.length > 1 && (
           <Svg source={modelsSvg(W, models)} alt={`${s.byModel}: ${models.map(r => `${r.name} ≈${fmtCost(r.costUsd)}`).join(', ')}`} width={W} height={modelsHeight(models.length)} />
         )}
-        <Text dimColor>{s.estimate}</Text>
-        {agentsCard}
+        {isEmpty ? null : agentsCard}
         {agentsControls}
       </Box>
     )

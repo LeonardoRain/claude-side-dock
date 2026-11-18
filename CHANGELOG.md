@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.20
+- The desktop work map has a richer look: each station has its own color, a radar beam sweeps the rings with a fading wake under a turning dial, two arcs turn around the core, and what flies and what is lit glows. The ground, the nodes and the core are shaded. Light, auto and reduced-motion themes are all painted; a color set in `colors` still wins. The map shows and does exactly what it did before, and the terminal's picture and braille map are unchanged.
+
+## 0.2.19
+- Fixed the context reading going missing in the side panel's "Context window" card and the fan above the input: a `session.measure` event that left the percent out used to wipe the last reading. Now only the figures an event carries are taken, a missing percent is worked out from tokens / window, and the figures are also read from the session after every main-loop step, as the Lot Map does.
+
+## 0.2.18
+- The token card's info tooltip now has a solid dark-grey background, so it no longer lets the card's figures show through.
+
+## 0.2.17
+- The dock's "Work map" heading is gone, so the map sits higher.
+- The desktop task list under the map is a window of 8 rows; ▲ / ▼ step through older and newer rows, so the pane no longer grows with it.
+
+## 0.2.16
+- The tokens card's info icon moved to the right of its title, and its note now shows on hover as a native card (the SVG tooltip never fired).
+
+## 0.2.15
+- The dock's Subagents card is hidden while there are no subagents.
+- The "estimate, not a bill" note moved into an info icon beside the token total; hover it to read the note.
+
 ## 0.2.14
 - The band is counted at 8.9 px per column and the Pixel bar's right-hand time slot is narrower (92 → 76 px), so the bar's track and the rows run closer to the right edge.
 

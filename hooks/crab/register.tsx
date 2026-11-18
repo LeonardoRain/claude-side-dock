@@ -740,7 +740,7 @@ const toggled = (list: readonly string[], id: string): string[] =>
   list.includes(id) ? list.filter(one => one !== id) : [...list, id]
 
 type Measured = {
-  context: { percent?: number }
+  context: { percent?: number; tokens?: number; window?: number }
   rateLimits: readonly { kind: string; percentUsed: number }[]
 }
 
@@ -752,8 +752,16 @@ async function gauge($: EngineInterface, measured: Measured): Promise<void> {
 
     return limit === undefined ? null : Math.round(limit.percentUsed)
   }
-  const now: Meter = { context: measured.context.percent ?? null, fiveHour: used('five_hour'), week: used('seven_day') }
   const before = await read($, meter)
+  const { percent, tokens, window: size } = measured.context
+  // A reading without a percent must not blank the shell: work it out from the tokens, else keep the last one.
+  const context =
+    typeof percent === 'number'
+      ? percent
+      : typeof tokens === 'number' && typeof size === 'number' && size > 0
+        ? Math.min(100, (tokens / size) * 100)
+        : before.context
+  const now: Meter = { context, fiveHour: used('five_hour'), week: used('seven_day') }
 
   if (before.context !== now.context || before.fiveHour !== now.fiveHour || before.week !== now.week) {
     await update($, meter, () => now)
@@ -1026,6 +1034,14 @@ export async function crab_turn_start($: Parameters<HookFor<'turn.start'>>[0], e
 
 export async function* crab_turn_step($: Parameters<HookFor<'turn.step'>>[0], e: Parameters<HookFor<'turn.step'>>[1], next: Parameters<HookFor<'turn.step'>>[2]): ReturnType<HookFor<'turn.step'>> {
   const helper = e.agentId
+
+  // The context grows with each step of the main loop; session.measure may not say so, usage() does.
+  if (helper === undefined) {
+    void $.session
+      .usage()
+      .then(usage => gauge($, usage))
+      .catch(() => undefined)
+  }
 
   if (helper !== undefined) {
     noteHelper($, helper)

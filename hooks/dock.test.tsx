@@ -46,7 +46,9 @@ test('the dock stacks the crab, the work map and their rows', async ($, on) => {
   const ui = await $.ui.mount({ ...DOCK, surface: 'desktop' })
   // The crab stands above the prompt now, not in the dock.
   expect(await ui.find({ type: 'Text', text: /^Crab cam$/ })).toBeUndefined()
-  expect((await ui.find({ type: 'Text', text: /^Work map$/ }))?.text).toBe('Work map')
+  // The work map has no heading of its own now; its feed window under the map is what shows it is there.
+  expect(await ui.find({ type: 'Text', text: /^Work map$/ })).toBeUndefined()
+  expect(await ui.find({ key: 'feed-window' })).toBeDefined()
   // No savvy flow and no open sections yet.
   expect(await ui.find({ type: 'Text', text: /^Savvy progress$/ })).toBeUndefined()
   expect(await ui.find({ type: 'Text', text: /^Agents$/ })).toBeUndefined()
@@ -59,7 +61,9 @@ test('the Session panel stands at the top of the dock, above the work map', asyn
 
   const ui = await $.ui.mount({ ...DOCK, surface: 'desktop' })
   expect(await ui.find({ type: 'Svg' })).toBeDefined()
-  expect((await ui.find({ type: 'Text', text: /^Work map$/ }))?.text).toBe('Work map')
+  // The work map has no heading of its own now; its feed window under the map is what shows it is there.
+  expect(await ui.find({ type: 'Text', text: /^Work map$/ })).toBeUndefined()
+  expect(await ui.find({ key: 'feed-window' })).toBeDefined()
   await ui.unmount()
 })
 
@@ -82,7 +86,9 @@ test('the terminal draws the dock too', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   const ui = await $.ui.mount({ ...DOCK, surface: 'terminal' })
-  expect((await ui.find({ type: 'Text', text: /^Work map$/ }))?.text).toBe('Work map')
+  // No heading; the terminal's map ends with its tally line.
+  expect(await ui.find({ type: 'Text', text: /^Work map$/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /^No counts yet\.$/ })).toBeDefined()
   await ui.unmount()
 })
 

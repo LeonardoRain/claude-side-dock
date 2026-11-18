@@ -161,7 +161,7 @@ export const register: Register = (on, options) => {
     }
 
     section('session', null, session)
-    section('map', words.map, map)
+    section('map', null, map)
     section('crew', words.crew, crew, 'crew')
 
     return (

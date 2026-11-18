@@ -30,6 +30,8 @@ const CREW_NAMES = 32
 const ZOOMS = [160, 200, 240, 280, 340, 400]
 
 // Change the tag when a field of Entry or Board changes: it declines what an earlier version stored.
+const FEED_ROWS = 8
+
 const board = atom({ plugin: 'side-dock-claude', key: 'board' } as const, { entries: [], counts: {} } as Board, { shape: 'board-4' })
 
 const newId = (now: number): string => `${now.toString(36)}${Math.random().toString(36).slice(2, 7)}`
@@ -588,13 +590,30 @@ export async function lot_ui_render_Pane_PANE($: Parameters<MatchedHook<'ui.rend
   const isEditor = e.surface === 'vscode'
   const zoom = isEditor ? state.zoom : undefined
   // Each station's share of the context is on the desktop map only, for now; the editor's map is drawn too small for it.
-  const map = <Svg source={drawMap(state, now, setup, e.surface === 'desktop')}alt={`${t.title}. ${describeNow(state, t)}`} {...(zoom !== undefined ? { width: zoom, height: Math.round(zoom * MAP_ASPECT) } : {})} />
+  const map = <Svg source={drawMap(state, now, setup, e.surface === 'desktop', true)}alt={`${t.title}. ${describeNow(state, t)}`} {...(zoom !== undefined ? { width: zoom, height: Math.round(zoom * MAP_ASPECT) } : {})} />
   if (!isEditor) {
+    // The feed is a window of FEED_ROWS rows of its own, so the pane does not grow with it: ▲ reads older rows, ▼ newer.
+    const total = rows.length
+    const maxUp = Math.max(0, total - FEED_ROWS)
+    const up = Math.min(state.feedUp ?? 0, maxUp)
+    const shown = total === 0 ? feed : rows.slice(total - FEED_ROWS - up < 0 ? 0 : total - FEED_ROWS - up, total - up)
+    const pad = Math.max(0, Math.min(FEED_ROWS, total) - shown.length)
+    const step = (by: number) => quietly(() => update($, board, b => ({ ...b, feedUp: Math.max(0, Math.min(maxUp, up + by)) })))
     return (
       <Box flexDirection="column">
         {map}
         {current}
-        {feed}
+        <Box key="feed-window" flexDirection="column" height={Math.min(FEED_ROWS, Math.max(total, 1))} overflow="hidden">
+          {shown}
+          {Array.from({ length: pad }, () => <Text> </Text>)}
+        </Box>
+        {maxUp > 0 && (
+          <Box flexDirection="row" gap={2} justifyContent="flex-end">
+            <Text dimColor>{`${total - up - Math.min(FEED_ROWS, total)}–${total - up} / ${total}`}</Text>
+            <Button key="feed-older" plain dimColor label="▲" onPress={() => step(1)} />
+            <Button key="feed-newer" plain dimColor label="▼" onPress={() => step(-1)} />
+          </Box>
+        )}
       </Box>
     )
   }
